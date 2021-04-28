@@ -5,6 +5,7 @@ Keeping the CPU usage low was one of the goals, because gaming on my very own se
   my CPU is the performance bottleneck. 
 
 ```
+Set the USB port number yourself. \
 Inserting a higher saturation and brightness values in the setup will show you the current color accents. \
 For watching a movie, I'd recommend lower values to get an ambient lighting and smoother transitions. \
 Higher saturation values than zero can be used to ignore the 256 shades of grey (from black to white). \
