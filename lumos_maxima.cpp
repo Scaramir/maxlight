@@ -35,7 +35,7 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
-
+ 
 const int data_amount = 3 * LED_COUNT +2;
 uint8_t buffer[data_amount]; //+2, 'cause "ml" is my signature
 int index = 0;
