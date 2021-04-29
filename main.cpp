@@ -95,40 +95,39 @@ namespace screen_capture {
 //led_stuff:
 	struct Pixel {
 	public:
-		int b = 0;	                   //initialized to 'black'; 
+		int b = 0;	                   		//initialized to 'black'; 
 		int g = 0;
 		int r = 0;
 	};
 	//retrieve_pixel():
-		Pixel curr_pixel;
-		Pixel accum_pixel;
-		Pixel mean_pixel;
+	Pixel curr_pixel;
+	Pixel accum_pixel;
+	Pixel mean_pixel;
 	//fade:
-	int fade_val = 100;				//default value. Adafruits prefers 75
+	int fade_val = 100;					//default value. Adafruits prefers 75
 	Pixel mean_color_old;
 	Pixel mean_color_new;
 
-
 	const uint8_t gamma8[] = { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    
-							   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,    
-							   1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,    
-							   2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
-							   5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,  
-							   10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,   
-							   17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,   
-							   25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,   
-							   37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,   
-							   51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,   
-							   69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,   
-							   90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,  
-							   115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,  
-							   144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,  
-							   177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,  
-							   215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
-}; using namespace screen_capture;
-
+				   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,    
+				   1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,    
+				   2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
+				   5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,  
+				   10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,   
+				   17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,   
+				   25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,   
+				   37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,   
+				   51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,   
+				   69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,   
+				   90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,  
+				   115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,  
+				   144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,  
+				   177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,  
+				   215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
+}; 
+using namespace screen_capture;
 //#############################################################################################
-///SO: https://github.com/diederickh/screen_capture/blob/master/src/test/test_win_api_directx_research.cpp;
+
 //Check Devices for outputs
 /**
  * @brief check monitors (outputs) for a graphic adpater and push it into vec<output>
@@ -209,13 +208,13 @@ int check_monitor_devices() {
 	}
 
 	//select monitor and adapter for analyzation
-		std::cout << "\nWhich monitor do you choose?\n\tType the number (x.) of the monitor." << "\n";
-		std::cin.clear(); //yaya, use scanl, getline, anything but cin 
-		std::cin >> chosen_output_num; 
-		///fix device creation for this:
-		//std::cout << "Which graphics adapter do you choose?\n\tType the number of adapter." << "\n";
-		std::cin.clear();
-		//std::cin >> chosen_adapter_num;
+	std::cout << "\nWhich monitor do you choose?\n\tType the number (x.) of the monitor." << "\n";
+	std::cin.clear(); //yaya, use scanl, getline, anything but cin 
+	std::cin >> chosen_output_num; 
+	///fix device creation for this:
+	//std::cout << "Which graphics adapter do you choose?\n\tType the number of adapter." << "\n";
+	std::cin.clear();
+	//std::cin >> chosen_adapter_num;
 
 	return chosen_output_num;
 }
@@ -223,7 +222,7 @@ int check_monitor_devices() {
 /**
  * @brief creates a cpu access texture (D3D11Texture2D); this way, the texture can get copied and mapped.
  * this can be stored in system memory or as a shader-texture
- * @TODO: Check performance for memcpy and cpu_access
+ * @return int != 0 if texture is not accessible
  */
 int check_cpu_access_texture() {
 //create a texture with cpu_access_read
@@ -257,32 +256,32 @@ int check_cpu_access_texture() {
 int create_and_get_device(int &chosen_monitor) {
 	for (UINT driver_type_index = 0; driver_type_index < gNumDriverTypes; ++driver_type_index) {
 		hr = D3D11CreateDevice(
-				nullptr,						// Adapter: The adapter (video card) we want to use. We may use nullptr to pick the default adapter. 
+				nullptr,			// Adapter: The adapter (video card) we want to use. We may use nullptr to pick the default adapter. 
 				gDriverTypes[driver_type_index],// DriverType: We use the GPU as backing device. 
-				nullptr,						// Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicaple.
-				0,								// D3D11_CREATE_DEVICE_FLAG 
-				gFeatureLevels,					// Feature Levels (ptr to array): order of versions to use. 
-				gNumFeatureLevels,				// Number of feature levels. according to defaults Array
-				D3D11_SDK_VERSION,				// The SDK version, use D3D11_SDK_VERSION 
-				&device,						// OUT: the ID3D11Device object. 
-				&feature_level,					// OUT: the selected feature level. 
-				&context						// OUT: the ID3D11DeviceContext that represents the above features. 
+				nullptr,			// Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicaple.
+				0,				// D3D11_CREATE_DEVICE_FLAG 
+				gFeatureLevels,			// Feature Levels (ptr to array): order of versions to use. 
+				gNumFeatureLevels,		// Number of feature levels. according to defaults Array
+				D3D11_SDK_VERSION,		// The SDK version, use D3D11_SDK_VERSION 
+				&device,			// OUT: the ID3D11Device object. 
+				&feature_level,			// OUT: the selected feature level. 
+				&context			// OUT: the ID3D11DeviceContext that represents the above features. 
 			 );						
 		if (SUCCEEDED(hr)) {
 			std::cout << "Device creation succesful." << "\n";
 			break;
 		}
 	} 
-	if (hr == E_INVALIDARG) {                   //in Case D3D11_1 does not work (Error: invalid_arguments passed), take D3D11 and standard notation/parameters
+	if (hr == E_INVALIDARG) {                   		//in Case D3D11_1 does not work (Error: invalid_arguments passed), take D3D11 and standard notation/parameters
 		hr = D3D11CreateDevice(
-			   nullptr,                         //outputAdapter
+			   nullptr,                         	//outputAdapter
 			   D3D_DRIVER_TYPE_HARDWARE, 
 			   nullptr,
 			   0,
 			   &gFeatureLevels[1],
 			   gNumFeatureLevels - 1,
 			   D3D11_SDK_VERSION,
-			   &device,                         //TODO: enter specific graphic device, adapter and monitor in this section
+			   &device,                         	//TODO: enter specific graphic device, adapter and monitor in this section
 			   &feature_level,
 			   &context
 			);
@@ -296,7 +295,7 @@ int create_and_get_device(int &chosen_monitor) {
 			return -1;
 	}
 
-	Sleep(100); 
+	Sleep(50); 
 
 	/**
 	 * Create a IDXGIOutputDuplication
@@ -337,7 +336,7 @@ int create_and_get_device(int &chosen_monitor) {
 	texture_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;                                                        // This is the default data when using desktop duplication, see https://msdn.microsoft.com/en-us/library/windows/desktop/hh404611(v=vs.85).aspx
 	texture_desc.SampleDesc.Count = 1;
 	texture_desc.SampleDesc.Quality = 0;
-	texture_desc.Usage = D3D11_USAGE_STAGING /*D3D11_USAGE_DYNAMIC*/;
+	texture_desc.Usage = D3D11_USAGE_STAGING /*D3D11_USAGE_DYNAMIC*/;					 // comments: this would lead to a GPU accessible texture only. --> TODO
 	texture_desc.BindFlags = 0 /*D3D11_BIND_SHADER_RESOURCE*/;
 	texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE /*D3D11_CPU_ACCESS_WRITE*/; // 0 doesn't work -> invalid_arg
 	texture_desc.MiscFlags = 0;
@@ -354,31 +353,33 @@ int create_and_get_device(int &chosen_monitor) {
  */
 bool get_frame() {
 	
-	//We want to have the memory in the gpu instead inside the cpu, in wich case we'd drop the memory and end the program
-	 if (check_cpu_access_texture() != 0)
+	if (check_cpu_access_texture() != 0)
 		return false;
-
-	 //checking this v description every call is a maybe bit too much
+	
+	//We want to have the memory in the GPU. Otherwise, we'd drop the memory and end the program
+	//checking this v description every call is a maybe bit too much
 	desktop_duplication->GetDesc(&desktop_duplicate_desc);
 	if (desktop_duplicate_desc.DesktopImageInSystemMemory == TRUE) {
 		std::cout << "Desktop image is in system memory and this is not want we want.\nAbort..." << "\n";
 		exit(EXIT_FAILURE);
 		return false;
-	} // outsource this check into another loop, before you call get_frame(); ? 
-	  // after 15h hours of testing, this ^ if condition was not even once true
-
+	} 
+	// outsource this check into another loop, before you call get_frame(); ? 
+	// Edit: after 15h hours of testing, this ^ if condition was not even once true
+		
 	//Release frame directly before acquiring next frame.
 	if (new_frame == true)
 		new_frame = false;
 	hr = desktop_duplication->ReleaseFrame();
 
-#if 1
+#if 1   // accumulate some frames
 	if ((sleepTimerMs -8) > 1)
-		Sleep(sleepTimerMs -8); //somethings wrong here ! we need a formula to raise the result for lower frame rates ! 
-	//give it extra ms, maybe even more^^ 
+		Sleep(sleepTimerMs -8); 
+	// this value is specific for my system 
+	// give it extra ms, maybe even more^^ 
 #endif
 	//get accumulated frames
-	hr = desktop_duplication->AcquireNextFrame(5/*sleepTimerMs/10*/, &frame_info, &frame); //makig use of win desktop duplication apis' main function
+	hr = desktop_duplication->AcquireNextFrame(5/*sleepTimerMs/10*/, &frame_info, &frame); //makig use of win desktop duplication apis' core function
 	if (hr == DXGI_ERROR_INVALID_CALL) {
 		++fail_invalid;
 		return false;
@@ -404,8 +405,8 @@ bool get_frame() {
 	 * video ram would also work, but a memcpy() to system mem would be necessary. runtime improvement: 0; 
 	 * best way to do: 
 	 *  capture in a 2dtexture in gpu ram, "/alternative params/"
-	 *  obtain a shaderstructure, apply the mipmap-chain. 
-	 *  memcpy() mipmaps to cpu acces structure. obtain mean-value. 
+	 *  obtain a shaderstructure, apply a mipmap-chain with custom filters, covering the conditions of reject_sub_pixel. 
+	 *  memcpy() mipmaps to cpu access structure. obtain mean-value. 
 	 * but this way works just fine for ~60fps:
 	 */
 	//UINT subresource = D3D11CalcSubresource(0, 0, 0);
@@ -420,7 +421,7 @@ bool get_frame() {
 #if 0  //#####################################################################################
 	//save resource to file to see, if the screen got REALLY captured
 	//SO.: code-project.org
-	BITMAPINFO	lBmpInfo;
+	BITMAPINFO lBmpInfo;
 
 	// BMP 32 bpp
 	ZeroMemory(&lBmpInfo, sizeof(BITMAPINFO));
@@ -561,7 +562,7 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE &mapped_subresource) {
 
 	mean_pixel = {    //gamma adjustment
 		accum_pixel.b == zero ? zero : gamma8[((accum_pixel.b - (accum_pixel.b / 3)) / pixel_amount +1/*+ (accum_pixel.b % pixel_amount != zero)*/)],					//blue is a bit too intense with WS2812b ICs on 5050LEDs
-		accum_pixel.g == zero ? zero : gamma8[(accum_pixel.g / pixel_amount +1/*+ (accum_pixel.g % pixel_amount != zero)*/)],											//integer ceiling; avoid 0 divising
+		accum_pixel.g == zero ? zero : gamma8[(accum_pixel.g / pixel_amount +1/*+ (accum_pixel.g % pixel_amount != zero)*/)],											//comment: integer ceiling
 		accum_pixel.r == zero ? zero : gamma8[(accum_pixel.r / pixel_amount +1/*+ (accum_pixel.r % pixel_amount != zero)*/)],
 	};
 
@@ -610,10 +611,9 @@ bool send_data(Pixel &mean_color_new){
 
 }
 
-
 //#############################################################################################
 //##################################### M A I N ###############################################
-//###################################### v0.9 #################################################
+//###################################### v1.0 #################################################
 int main() {
 //setup()	
 	chosen_output_num = check_monitor_devices(); //
@@ -648,14 +648,14 @@ int main() {
 		std::cin >> fade_val;
 	}
 
-	create_and_get_device(chosen_output_num);		 //not finished... how do i pass a specific device+monitor to CreateDevice()? 
+	create_and_get_device(chosen_output_num);		 	//not finished... how do i pass a specific device+monitor to CreateDevice()? 
 
 	if (!connection_setup())
 		return -123;
 	Sleep(4500);
 //()putes
 
-	//30fps * 10sec = 300 frames max.
+	// 30fps * 10sec = 300 frames max.
 	int get_frame_call = 0;
 	auto start = std::chrono::steady_clock::now();
 
@@ -664,11 +664,11 @@ int main() {
 			//break;
 
 		mean_color_old = mean_color_new;
-		if (get_frame()) { 							//try no if condition here for smoother lights when less than 24fps, but adjust send_data with a 1ms sleep..
+		if (get_frame()) { 					// try no if condition here for smoother lights when less than 24fps, but adjust send_data with a 1ms sleep..
 			mean_color_new = retrieve_pixel(mapped_subresource);
 
 			mean_color_new = fade(mean_color_new);
-			if (!send_data(mean_color_new)) {		//send data to micro controller
+			if (!send_data(mean_color_new)) {		// send data to micro controller
 				std::cout << "Sending data to the micro controller failed!\n\tTrying to reconnect...\n";
 				Sleep(5000);
 				connection_setup();
