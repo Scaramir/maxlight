@@ -32,7 +32,7 @@ UINT gNumDriverTypes = ARRAYSIZE(gDriverTypes);
 // Customized feature level support
 D3D_FEATURE_LEVEL gFeatureLevels[] = {
 	D3D_FEATURE_LEVEL_11_1,
-    D3D_FEATURE_LEVEL_11_0,
+	D3D_FEATURE_LEVEL_11_0,
 	D3D_FEATURE_LEVEL_10_1,
 	D3D_FEATURE_LEVEL_10_0,
 	D3D_FEATURE_LEVEL_9_3,
@@ -267,14 +267,14 @@ int create_and_get_device(int &chosen_monitor) {
 				&device,						// OUT: the ID3D11Device object. 
 				&feature_level,					// OUT: the selected feature level. 
 				&context						// OUT: the ID3D11DeviceContext that represents the above features. 
-		     );						
+			 );						
 		if (SUCCEEDED(hr)) {
 			std::cout << "Device creation succesful." << "\n";
 			break;
 		}
 	} 
 	if (hr == E_INVALIDARG) {                   //in Case D3D11_1 does not work (Error: invalid_arguments passed), take D3D11 and standard notation/parameters
-	    hr = D3D11CreateDevice(
+		hr = D3D11CreateDevice(
 			   nullptr,                         //outputAdapter
 			   D3D_DRIVER_TYPE_HARDWARE, 
 			   nullptr,
@@ -285,7 +285,7 @@ int create_and_get_device(int &chosen_monitor) {
 			   &device,                         //TODO: enter specific graphic device, adapter and monitor in this section
 			   &feature_level,
 			   &context
-		    );
+			);
 		if(SUCCEEDED(hr))
 			std::cout << "Device creation succesful (feature level: D3D11)." << "\n";
 	} 
@@ -402,13 +402,13 @@ bool get_frame() {
 
 	/**
 	 * video ram would also work, but a memcpy() to system mem would be necessary. runtime improvement: 0; 
-     * best way to do: 
-     *  capture in a 2dtexture in gpu ram, "/alternative params/"
-     *  obtain a shaderstructure, apply the mipmap-chain. 
-     *  memcpy() mipmaps to cpu acces structure. obtain mean-value. 
-     * but this way works just fine for ~60fps:
+	 * best way to do: 
+	 *  capture in a 2dtexture in gpu ram, "/alternative params/"
+	 *  obtain a shaderstructure, apply the mipmap-chain. 
+	 *  memcpy() mipmaps to cpu acces structure. obtain mean-value. 
+	 * but this way works just fine for ~60fps:
 	 */
-    //UINT subresource = D3D11CalcSubresource(0, 0, 0);
+	//UINT subresource = D3D11CalcSubresource(0, 0, 0);
 	hr = context->Map(frame_texture, /*subresource*/0, D3D11_MAP_READ_WRITE /*D3D11_MAP_WRITE_DISCARD*/, 0, &mapped_subresource);
 	if (S_OK != hr) {
 		printf("Error: Failed to map the pointer of 'frame_texture' to 'mapped_subresource'.\n");
@@ -498,20 +498,20 @@ bool reject_sub_pixel(Pixel &curr_pixel) {
 #if 0
 //TODO
 std::vector<std::vector<uint8_t>> setup_gamma(){
-    std::vector<std::vector<uint8_t>> gamma(256, std::vector<uint8_t>(3, 0));
-    // Pre-compute gamma correction table for LED brightness levels:
-    for(int i = 0; i < 256; ++i) {
-      float f = pow((float)i / 255.0, 2.8);
-      gamma[i][0] = (uint8_t)(f * 255.0);
-      gamma[i][1] = (uint8_t)(f * 240.0);
-      gamma[i][2] = (uint8_t)(f * 220.0);
-    }
+	std::vector<std::vector<uint8_t>> gamma(256, std::vector<uint8_t>(3, 0));
+	// Pre-compute gamma correction table for LED brightness levels:
+	for(int i = 0; i < 256; ++i) {
+	  float f = pow((float)i / 255.0, 2.8);
+	  gamma[i][0] = (uint8_t)(f * 255.0);
+	  gamma[i][1] = (uint8_t)(f * 240.0);
+	  gamma[i][2] = (uint8_t)(f * 220.0);
+	}
 	return gamma; 
 }
 
 //TODO
 void adjust_pixel(Pixel &mean_pixel) {
-    mean_pixel.b ;
+	mean_pixel.b ;
 	mean_pixel.g ;
 	mean_pixel.r;
 	
@@ -541,7 +541,7 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE &mapped_subresource) {
 			curr_pixel.b = pixel_array_source[row_start + col * 4 + 0];             //first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
 			curr_pixel.g = pixel_array_source[row_start + col * 4 + 1];
 			curr_pixel.r = pixel_array_source[row_start + col * 4 + 2];
-            
+			
 			if (reject_sub_pixel(curr_pixel)) 
 				continue;
 
