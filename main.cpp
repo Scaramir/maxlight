@@ -90,12 +90,12 @@ namespace screen_capture {
 	int fail_4 = 0;
 	int fail_5 = 0;
 //arduino connection 
-	const char serial_port[] = { 'C', 'O', 'M', '7' };	//usb port name 
+	const char serial_port[] = { 'C', 'O', 'M', '7' };				//usb port name 
 	Serial* SP;
 //led_stuff:
 	struct Pixel {
 	public:
-		int b = 0;	                   		//initialized to 'black'; 
+		int b = 0;	                   								//initialized to 'black'; 
 		int g = 0;
 		int r = 0;
 	};
@@ -104,26 +104,27 @@ namespace screen_capture {
 	Pixel accum_pixel;
 	Pixel mean_pixel;
 	//fade:
-	int fade_val = 100;					//default value. Adafruits prefers 75
+	int fade_val = 100;												//default value. Adafruits prefers 75
 	Pixel mean_color_old;
 	Pixel mean_color_new;
 
-	const uint8_t gamma8[] = { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    
-				   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,    
-				   1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,    
-				   2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
-				   5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,  
-				   10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,   
-				   17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,   
-				   25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,   
-				   37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,   
-				   51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,   
-				   69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,   
-				   90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,  
-				   115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,  
-				   144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,  
-				   177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,  
-				   215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
+	const uint8_t gamma8[] = {
+				    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    
+				    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,    
+				    1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,    
+				    2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
+				    5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,  
+				    10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,   
+				    17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,   
+				    25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,   
+				    37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,   
+				    51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,   
+				    69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,   
+				    90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,  
+				    115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,  
+				    144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,  
+				    177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,  
+				    215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
 }; 
 using namespace screen_capture;
 //#############################################################################################
@@ -172,7 +173,7 @@ int check_monitor_devices() {
 	//Create device that's able to enumerate @adapters
 	IDXGIFactory1* factory = nullptr;
 	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&factory)); //winSDK and x64 needed for compilation
-	if (FAILED(hr)) { //hr != 0 || S_OK
+	if (FAILED(hr)) { //(hr != 0 || hr != S_OK)
 		printf("Error: failed to retrieve the IDXGIFactory.\n");
 		exit(EXIT_FAILURE);
 		return -1;
@@ -256,32 +257,32 @@ int check_cpu_access_texture() {
 int create_and_get_device(int &chosen_monitor) {
 	for (UINT driver_type_index = 0; driver_type_index < gNumDriverTypes; ++driver_type_index) {
 		hr = D3D11CreateDevice(
-				nullptr,			// Adapter: The adapter (video card) we want to use. We may use nullptr to pick the default adapter. 
+				nullptr,						// Adapter: The adapter (video card) we want to use. We may use nullptr to pick the default adapter. 
 				gDriverTypes[driver_type_index],// DriverType: We use the GPU as backing device. 
-				nullptr,			// Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicaple.
-				0,				// D3D11_CREATE_DEVICE_FLAG 
-				gFeatureLevels,			// Feature Levels (ptr to array): order of versions to use. 
-				gNumFeatureLevels,		// Number of feature levels. according to defaults Array
-				D3D11_SDK_VERSION,		// The SDK version, use D3D11_SDK_VERSION 
-				&device,			// OUT: the ID3D11Device object. 
-				&feature_level,			// OUT: the selected feature level. 
-				&context			// OUT: the ID3D11DeviceContext that represents the above features. 
+				nullptr,						// Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicaple.
+				0,								// D3D11_CREATE_DEVICE_FLAG 
+				gFeatureLevels,					// Feature Levels (ptr to array): order of versions to use. 
+				gNumFeatureLevels,				// Number of feature levels. according to defaults Array
+				D3D11_SDK_VERSION,				// The SDK version, use D3D11_SDK_VERSION 
+				&device,						// OUT: the ID3D11Device object. 
+				&feature_level,					// OUT: the selected feature level. 
+				&context						// OUT: the ID3D11DeviceContext that represents the above features. 
 			 );						
 		if (SUCCEEDED(hr)) {
 			std::cout << "Device creation succesful." << "\n";
 			break;
 		}
 	} 
-	if (hr == E_INVALIDARG) {                   		//in Case D3D11_1 does not work (Error: invalid_arguments passed), take D3D11 and standard notation/parameters
+	if (hr == E_INVALIDARG) {                   //in Case D3D11_1 does not work (Error: invalid_arguments passed), take D3D11 and standard notation/parameters
 		hr = D3D11CreateDevice(
-			   nullptr,                         	//outputAdapter
+			   nullptr,                         //outputAdapter
 			   D3D_DRIVER_TYPE_HARDWARE, 
 			   nullptr,
 			   0,
 			   &gFeatureLevels[1],
 			   gNumFeatureLevels - 1,
 			   D3D11_SDK_VERSION,
-			   &device,                         	//TODO: enter specific graphic device, adapter and monitor in this section
+			   &device,                         //TODO: enter specific graphic device, adapter and monitor in this section
 			   &feature_level,
 			   &context
 			);
@@ -333,10 +334,10 @@ int create_and_get_device(int &chosen_monitor) {
 	texture_desc.Height = desktop_duplicate_desc.ModeDesc.Height;
 	texture_desc.MipLevels = 1;
 	texture_desc.ArraySize = 1;
-	texture_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;                                                        // This is the default data when using desktop duplication, see https://msdn.microsoft.com/en-us/library/windows/desktop/hh404611(v=vs.85).aspx
+	texture_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;                                                  		 // This is the default data when using desktop duplication, see https://msdn.microsoft.com/en-us/library/windows/desktop/hh404611(v=vs.85).aspx
 	texture_desc.SampleDesc.Count = 1;
 	texture_desc.SampleDesc.Quality = 0;
-	texture_desc.Usage = D3D11_USAGE_STAGING /*D3D11_USAGE_DYNAMIC*/;					 // comments: this would lead to a GPU accessible texture only. --> TODO
+	texture_desc.Usage = D3D11_USAGE_STAGING /*D3D11_USAGE_DYNAMIC*/;					 					 // comments: this would lead to a GPU accessible texture only. --> TODO
 	texture_desc.BindFlags = 0 /*D3D11_BIND_SHADER_RESOURCE*/;
 	texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE /*D3D11_CPU_ACCESS_WRITE*/; // 0 doesn't work -> invalid_arg
 	texture_desc.MiscFlags = 0;
@@ -356,8 +357,8 @@ bool get_frame() {
 	if (check_cpu_access_texture() != 0)
 		return false;
 	
-	//We want to have the memory in the GPU. Otherwise, we'd drop the memory and end the program
-	//checking this v description every call is a maybe bit too much
+	// We want to have the memory in the GPU. Otherwise, we'd drop the memory and end the program
+	// checking this v description every call is a maybe bit too much
 	desktop_duplication->GetDesc(&desktop_duplicate_desc);
 	if (desktop_duplicate_desc.DesktopImageInSystemMemory == TRUE) {
 		std::cout << "Desktop image is in system memory and this is not want we want.\nAbort..." << "\n";
@@ -409,8 +410,7 @@ bool get_frame() {
 	 *  memcpy() mipmaps to cpu access structure. obtain mean-value. 
 	 * but this way works just fine for ~60fps:
 	 */
-	//UINT subresource = D3D11CalcSubresource(0, 0, 0);
-	hr = context->Map(frame_texture, /*subresource*/0, D3D11_MAP_READ_WRITE /*D3D11_MAP_WRITE_DISCARD*/, 0, &mapped_subresource);
+	hr = context->Map(frame_texture, 0, D3D11_MAP_READ_WRITE /*D3D11_MAP_WRITE_DISCARD*/, 0, &mapped_subresource);
 	if (S_OK != hr) {
 		printf("Error: Failed to map the pointer of 'frame_texture' to 'mapped_subresource'.\n");
 		return false;
@@ -537,7 +537,7 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE &mapped_subresource) {
 	int pixel_amount = 0;
 	for (UINT row = 0; row < height; row = row + 2) {							    //+2 instead of ++ drops half the resolution
 		UINT row_start = row * mapped_subresource.RowPitch / 4;
-		for (UINT col = 0; col < width; col = col + 4) {						    //
+		for (UINT col = 0; col < width; col = col + 2) {						    //col + quality_loss 
 
 			curr_pixel.b = pixel_array_source[row_start + col * 4 + 0];             //first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
 			curr_pixel.g = pixel_array_source[row_start + col * 4 + 1];
@@ -664,11 +664,11 @@ int main() {
 			//break;
 
 		mean_color_old = mean_color_new;
-		if (get_frame()) { 					// try no if condition here for smoother lights when less than 24fps, but adjust send_data with a 1ms sleep..
+		if (get_frame()) { 								// try no if condition here for smoother lights when less than 24fps, but adjust send_data with a 1ms sleep..
 			mean_color_new = retrieve_pixel(mapped_subresource);
 
 			mean_color_new = fade(mean_color_new);
-			if (!send_data(mean_color_new)) {		// send data to micro controller
+			if (!send_data(mean_color_new)) {			// send data to micro controller
 				std::cout << "Sending data to the micro controller failed!\n\tTrying to reconnect...\n";
 				Sleep(5000);
 				connection_setup();
