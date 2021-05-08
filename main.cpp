@@ -64,9 +64,9 @@ namespace screen_capture {
 	CComPtrCustom<ID3D11Device> device = nullptr;
 	CComPtrCustom<ID3D11DeviceContext> context = nullptr;
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
-//reject_sub_pixel() 
-	UINT8 min_saturation_per_pixel = 15;							// finding accents: 60;
-	UINT8 min_brightness_per_pixel = 50;							//                 160;
+//reject_sub_pixel()
+	UINT8 min_saturation_per_pixel = 30;							// finding accents: 60;
+	UINT8 min_brightness_per_pixel = 70;							//                 160;
 //get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	CComPtrCustom<ID3D11Texture2D> frame_texture_ori = nullptr;
@@ -90,32 +90,28 @@ namespace screen_capture {
 		int g = 0; 
 		int r = 0;
 	};
-//retrieve_pixel():
-	//Pixel curr_pixel;
-	//Pixel accum_pixel;
-	//Pixel mean_pixel;
 //fade:
 	int fade_val = 110;												// default value
 	Pixel mean_color_old;
 	Pixel mean_color_new;
 
 	const uint8_t gamma8[] = {
-				    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    
-				    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,    
-				    1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,    
-				    2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
-				    5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,  
-				    10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,   
-				    17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,   
-				    25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,   
-				    37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,   
-				    51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,   
-				    69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,   
-				    90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,  
-				    115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,  
-				    144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,  
-				    177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,  
-				    215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
+					0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    
+					0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,    
+					1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,    
+					2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
+					5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,  
+					10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,   
+					17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,   
+					25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,   
+					37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,   
+					51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,   
+					69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,   
+					90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,  
+					115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,  
+					144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,  
+					177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,  
+					215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
 }; 
 using namespace screen_capture;
 //#############################################################################################
@@ -312,6 +308,7 @@ int create_and_get_device(int &chosen_monitor) {
 	}
 	chosen_output->Release();
 
+	desktop_duplication.Release();
 	hr = output1->DuplicateOutput(device, &desktop_duplication);
 	if (FAILED(hr)) {
 		std::cout << "Error: Desktop duplication failed." << "\n";
@@ -353,6 +350,12 @@ bool get_frame() {
 	CComPtrCustom<IDXGIResource> frame = nullptr;
 	DXGI_OUTDUPL_FRAME_INFO frame_info;
 
+	// accumulate some frames
+	if (((int)sleepTimerMs - 10) > 1)
+		Sleep(sleepTimerMs - 10); 
+		// this value is specific for my system 
+		// give it extra ms, maybe even more^^ 
+
 	if (check_cpu_access_texture(frame_texture) != 0)
 		return false;
 	
@@ -371,23 +374,19 @@ bool get_frame() {
 	//Release frame directly before acquiring next frame.
 	hr = desktop_duplication->ReleaseFrame();
 
-#if 1   // accumulate some frames
-	if (((int)sleepTimerMs - 10) > 1)
-		Sleep(sleepTimerMs - 10); 
-	// this value is specific for my system 
-	// give it extra ms, maybe even more^^ 
-#endif
-
 	//get accumulated frames
 	hr = desktop_duplication->AcquireNextFrame(5, &frame_info, &frame); // making use of win desktop duplication apis' core function
 	if (hr == DXGI_ERROR_INVALID_CALL) {
 		++fail_invalid;
 		return false;
-	} if (FAILED(hr) && hr != DXGI_ERROR_INVALID_CALL) {
+	} if (hr == E_INVALIDARG) {
 		++fail_1;
 		return false;
 	} if (frame_info.AccumulatedFrames == 0) {
 		++fail_2;
+		return false;
+	} if (FAILED(hr) && hr != DXGI_ERROR_WAIT_TIMEOUT) {
+		create_and_get_device(chosen_output_num);
 		return false;
 	} if (hr == S_OK) {
 		hr = frame->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&frame_texture_ori);		
@@ -698,7 +697,7 @@ int main() {
 
 	set_sleepTimerMs(fps);
 	std::string configurate = "n";
-	std::cout << "Would you like to configure the settings? (y/n):\n";
+	std::cout << "\nWould you like to configure the settings? (y/n):\n";
 	std::cin.clear();
 	std::cin >> configurate;
 	if (configurate == "y" || configurate == "Y") {
@@ -724,7 +723,7 @@ int main() {
 
 	while (true) {
 		mean_color_old = mean_color_new;				// used in 'fade()'
-		if (get_frame()) { 								// try no if condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
+		if (get_frame()) { 								// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
 			mean_color_new = retrieve_pixel(mapped_subresource);
 			mean_color_new = fade(mean_color_new);
 			if (!send_data(mean_color_new)) {			// send data to micro controller
