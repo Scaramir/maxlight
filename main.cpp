@@ -64,7 +64,7 @@ namespace screen_capture {
 	CComPtrCustom<ID3D11Device> device = nullptr;
 	CComPtrCustom<ID3D11DeviceContext> context = nullptr;
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
-//reject_sub_pixel()
+//reject_sub_pixel() 
 	UINT8 min_saturation_per_pixel = 15;							// finding accents: 60;
 	UINT8 min_brightness_per_pixel = 50;							//                 160;
 //get_frame()
