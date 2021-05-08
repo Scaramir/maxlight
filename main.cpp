@@ -14,7 +14,7 @@
 #include <conio.h>
 #include <chrono>
 #include <shlobj.h>
-#include <shellapi.h>		//to display the copied frame
+#include <shellapi.h>
 
 #include "ccomptrcustom_class.hpp"
 #include "SerialClass.h"
