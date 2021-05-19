@@ -741,10 +741,10 @@ int main() {
 		return -1;
 	}
 
+	configuration();
+
 	if (!benchmark())
 		return -2;
-
-	configuration();
 
 	while (true) {
 		mean_color_old = mean_color_new;				// used in 'fade()'
