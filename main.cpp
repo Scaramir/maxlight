@@ -45,19 +45,19 @@ UINT gNumFeatureLevels = ARRAYSIZE(gFeatureLevels);
 ///Declaration of global variables:
 namespace screen_capture {
 //main:
-	UINT sleepTimerMs = (int)(((float)1 / 30) * 1000);
+	UINT sleepTimerMs = (int)(((float)1 / 33) * 1000);
 	UINT fps = 30;
 	void set_sleepTimerMs(unsigned int& fps) { if (fps == 0) sleepTimerMs = 0; else sleepTimerMs = ((int)(((float)1 / fps) * 1000)-1); }
 	HRESULT hr = E_FAIL;
 //output_enumeration() + check_monitor_devices()
 	std::vector<IDXGIAdapter1*> adapters;							// Needs to be Released()
-	int chosen_adapter_num = 0;										// default adpater 
+	static int chosen_adapter_num = 0;								// default adpater 
 	IDXGIAdapter1* chosen_adapter = nullptr;
 	int monitor_num = 0;											// outputs index
 	std::vector<IDXGIOutput*> outputs;
 	CComPtrCustom<IDXGIOutput> output = nullptr;
 	int chosen_output_num = 0;
-	IDXGIOutput* chosen_output = nullptr;
+	static IDXGIOutput* chosen_output = 0;
 //check_cpu_access()
 	D3D11_TEXTURE2D_DESC texture_desc;
 //create_and_get_device()
@@ -65,8 +65,8 @@ namespace screen_capture {
 	CComPtrCustom<ID3D11DeviceContext> context = nullptr;
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
 //reject_sub_pixel()
-	UINT8 min_saturation_per_pixel = 30;							// finding accents: 60;
-	UINT8 min_brightness_per_pixel = 70;							//                 160;
+	UINT8 min_saturation_per_pixel = 18;							// optional accents: 60;
+	UINT8 min_brightness_per_pixel = 60;							//                  160;
 //get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	CComPtrCustom<ID3D11Texture2D> frame_texture_ori = nullptr;
@@ -264,6 +264,7 @@ int create_and_get_device(int &chosen_monitor) {
 			break;
 		}
 	} 
+
 	if (hr == E_INVALIDARG) {                   // in Case D3D11_1 does not work (Error: invalid_arguments passed), take D3D11 and standard notation/parameters
 		hr = D3D11CreateDevice(
 			   nullptr,                         // outputAdapter
@@ -337,6 +338,12 @@ int create_and_get_device(int &chosen_monitor) {
 
 	std::cout << "Capturing a " << texture_desc.Width << " x " << texture_desc.Height << " monitor.\n";
 
+
+	if (check_cpu_access_texture(frame_texture) != 0)														 // this was originally in 'get_frame()'; gonna call it here once for structure access testing purposes
+		return -100;
+
+
+
 	return 0;
 }
 
@@ -350,15 +357,12 @@ bool get_frame() {
 	CComPtrCustom<IDXGIResource> frame = nullptr;
 	DXGI_OUTDUPL_FRAME_INFO frame_info;
 
-	// accumulate some frames
-	if (((int)sleepTimerMs - 10) > 1)
-		Sleep(sleepTimerMs - 10); 
-		// this value is specific for my system 
-		// give it extra ms, maybe even more^^ 
-
+#if 0
 	if (check_cpu_access_texture(frame_texture) != 0)
 		return false;
-	
+#endif
+
+#if 0
 	// We want to have the memory in the GPU. Otherwise, we'd drop the memory and end the program
 	// checking this v description every call is a maybe bit too much
 	DXGI_OUTDUPL_DESC desktop_duplicate_desc;
@@ -370,9 +374,16 @@ bool get_frame() {
 	} 
 	// outsource this check into another loop, before you call get_frame(); ? 
 	// Edit: after 15h hours of testing, this ^ if condition was not even once true
-		
+#endif
+
 	//Release frame directly before acquiring next frame.
 	hr = desktop_duplication->ReleaseFrame();
+	
+	//accumulate some frames
+	if (((int)sleepTimerMs - 10) > 1)
+		Sleep(sleepTimerMs - 10); 
+		// this value is specific for my system 
+		// give it extra ms, maybe even more^^ 
 
 	//get accumulated frames
 	hr = desktop_duplication->AcquireNextFrame(5, &frame_info, &frame); // making use of win desktop duplication apis' core function
@@ -386,6 +397,9 @@ bool get_frame() {
 		++fail_2;
 		return false;
 	} if (FAILED(hr) && hr != DXGI_ERROR_WAIT_TIMEOUT) {
+		device.Release();
+		context.Release();
+		desktop_duplication.Release();
 		create_and_get_device(chosen_output_num);
 		return false;
 	} if (hr == S_OK) {
@@ -404,9 +418,9 @@ bool get_frame() {
 	/**
 	 * video ram would also work, but a memcpy() to system mem would be necessary. runtime improvement: 0; 
 	 * best way to do: 
-	 *  capture in a 2dtexture in gpu ram, "/alternative params/"
-	 *  obtain a shaderstructure, apply a mipmap-chain with custom filters, covering the conditions of reject_sub_pixel. 
-	 *  memcpy() mipmaps to cpu access structure. obtain mean-value. 
+	 *  - capture in a 2dtexture in gpu ram, "/alternative params/"
+	 *  - obtain a shaderstructure, apply a mipmap-chain with custom filters, covering the conditions of reject_sub_pixel. 
+	 *  - memcpy() mipmaps to cpu access structure. obtain mean-value. 
 	 * but this way works just fine for ~60fps:
 	 */
 	hr = context->Map(frame_texture, 0, D3D11_MAP_READ_WRITE /*D3D11_MAP_WRITE_DISCARD*/, 0, &mapped_subresource);
@@ -541,7 +555,7 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE &mapped_subresource) {
 	int pixel_amount = 0;
 	for (UINT row = 0; row < height; row = row + 2) {							    // +2 instead of ++ drops half the resolution
 		UINT row_start = row * mapped_subresource.RowPitch / 4;
-		for (UINT col = 0; col < width; col = col + 2) {						    // col + quality_loss 
+		for (UINT col = 0; col < width; col = col + 3) {						    // col + quality_loss 
 
 			curr_pixel.b = pixel_array_source[row_start + col * 4 + 0];             // first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
 			curr_pixel.g = pixel_array_source[row_start + col * 4 + 1];
@@ -610,8 +624,8 @@ bool send_data(Pixel &mean_color_new){
 		return true;
 	uint8_t buffer[5] = {'m', 'o', (uint8_t)mean_color_new.r, (uint8_t)mean_color_new.g, (uint8_t)mean_color_new.b};
 	//Sleep(1);
-	return SP->WriteData(buffer, 5 /*sizeof(buffer)*/);
 
+	return SP->WriteData(buffer, 5 /*sizeof(buffer)*/);
 }
 
 
@@ -625,11 +639,16 @@ bool benchmark() {
 	std::cin.clear();
 	std::string bench;
 	std::cin >> bench;
-	if (bench != "y") 
-		return false;
+	if (bench != "y") {
+		if (!connection_setup())
+			return false;
+		Sleep(4500);
+		create_and_get_device(chosen_output_num);		 	//not finished... how do i pass a specific device+monitor to CreateDevice()?
+		return true;
+	}
 	if (!connection_setup())
 		return false;	
-	Sleep(4000);
+	Sleep(1000);
 	create_and_get_device(chosen_output_num);
 
 	std::vector<uint8_t> fps_vec = {25, 30, 60, 0};
@@ -675,26 +694,7 @@ bool benchmark() {
 	return true;
 }
 
-
-//#############################################################################################
-//##################################### M A I N ###############################################
-//###################################### v1.0 #################################################
-int main() {
-	
-	chosen_output_num = check_monitor_devices(); 
-	if (chosen_output_num < 0 || chosen_output_num >= outputs.size()) {
-		std::cout << "\n(main1): Something went terribly wrong. --> Exit" << "\n";
-		return 1;
-	}
-
-//setup()
-	if (!benchmark()) {
-		create_and_get_device(chosen_output_num);		 	//not finished... how do i pass a specific device+monitor to CreateDevice()? 
-		if (!connection_setup())
-			return -123;
-		Sleep(4500);
-	}
-
+bool configuration() {
 	set_sleepTimerMs(fps);
 	std::string configurate = "n";
 	std::cout << "\nWould you like to configure the settings? (y/n):\n";
@@ -706,20 +706,45 @@ int main() {
 		std::cin >> fps;
 		set_sleepTimerMs(fps);
 		std::cin.clear();
+
 		int sat, bright = 0;
 		std::cout << "Insert min. saturation level of the pixel for the analyzation (0 - 255)):\t\tDefault: 15\n";
 		std::cin.clear();
 		std::cin >> sat;
 		min_saturation_per_pixel = sat;
-		std::cin.clear();
+	
 		std::cout << "Insert min. brightness level of the pixel for the analyzation (0 - 255)):\t\tDefault: 50\n";
+		std::cin.clear();
 		std::cin >> bright;
 		min_brightness_per_pixel = bright;
-		std::cin.clear();
+	
 		std::cout << "Insert fading factor from one frame to another (0 - 255):\t\tDefault: 110\n";
+		std::cin.clear();
 		std::cin >> fade_val;
+	} else {
+		std::cout << "\nProceeding with following settings:\n";
+		std::cout << "\tMin.Brightness per Pixel: " << (int)min_brightness_per_pixel << "\n";
+		std::cout << "\tMin. Saturation per Pixel: " << (int)min_saturation_per_pixel << "\n";
+		std::cout << "\tFading factor: " << fade_val << "\n";
 	}
-//()putes
+	return true; 
+}
+
+//#############################################################################################
+//##################################### M A I N ###############################################
+//###################################### v1.0 #################################################
+int main() {
+	
+	chosen_output_num = check_monitor_devices(); 
+	if (chosen_output_num < 0 || chosen_output_num >= outputs.size()) {
+		std::cout << "\n(main1): Something went terribly wrong. --> Exit" << "\n";
+		return -1;
+	}
+
+	if (!benchmark())
+		return -2;
+
+	configuration();
 
 	while (true) {
 		mean_color_old = mean_color_new;				// used in 'fade()'
@@ -733,6 +758,10 @@ int main() {
 				Sleep(5000);
 			}
 		}
+		//prints:
+		//if (mapped_frames_counter % (fps+1) == 0)
+			//std::cout << "new_avg_pixel: " << mean_color_new.r << "r " << mean_color_new.g << "g " << mean_color_new.b << "b\n";
+	
 	}
 
 	std::cin.clear();
