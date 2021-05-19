@@ -1,5 +1,5 @@
-# maxlight
-## Alpha 1.0
+# MaxLight
+## Alpha 1.1
 This is a little tool to get the average screen color of a monitor of choice and send it to an rgb LED strip as fast as possible to tint a whole room in the displayed color. \
 It is not another copy of an Ambilight system, but can be used for it. \
 Instead, it's a room light to destress the eyes and raise the immersive power of entertainment setups. \
