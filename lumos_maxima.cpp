@@ -1,5 +1,3 @@
-// Sketch for the Arduino:
-//
 // "NEOPIXEL BEST PRACTICES for most reliable operation:
 // - Add 1000 uF CAPACITOR between NeoPixel strip's + and - connections.
 // - MINIMIZE WIRING LENGTH between microcontroller board and first pixel.
@@ -13,6 +11,7 @@
 // Just use a WS2812b, an arduino and a compatible power supply.
 // For led strips consuming <= 15W, you can solder the 5v wire of the usb cable directly
 //  to the board and make use of power share (BIOS and Motherboard dependable)
+// Costs: max.: 45€ for 5m 
 
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
@@ -37,10 +36,10 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 //   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
 
 const int buffer_size = 5;
-uint8_t buffer[buffer_size];         // +2, 'cause "mo" is the header
+uint8_t buffer[buffer_size];         //+2, 'cause "mo" is the header
 int index = 0;
 int min_bright = 0;
-//int parts = 7;
+int parts = 7;
 
 
 // setup() function -- runs once at startup --------------------------------
@@ -53,40 +52,45 @@ void setup() {
   #endif
   // END of Trinket-specific code.
 #endif
-  strip.begin();                     // INITIALIZE NeoPixel strip object (REQUIRED)
-  strip.setBrightness(255);          // Set BRIGHTNESS to about 1/5 (max = 255)
+  strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
+  strip.show();            // Turn OFF all pixels ASAP
+  strip.setBrightness(255); // Set BRIGHTNESS to about 1/5 (max = 255)
   for (uint16_t i = 0; i < LED_COUNT; ++i) {
       strip.setPixelColor(i, strip.Color(150, 0, 50));
       strip.show();
       delay(10);
   }
-  Serial.begin(2000000);             // Check baud rate value for your serial connection
-  Serial.print("ml");                // Send string to host 
+  strip.fill(strip.Color(0, 0, 0), 0, LED_COUNT);
+  strip.show();
+  Serial.begin(2000000);      // Check max. value for CH430 (~2M)
+  Serial.print("ml");      // Send string to host 
 }
 
 
 // loop() function -- runs repeatedly as long as board is on ---------------
 void loop() {
 
-    if (Serial.available() > 0) {
-        buffer[index++] = Serial.read();
-        if (index >= buffer_size) {
-          index = 0;
-            // buffer must begin with the correct header bytes
-            if (buffer[0] == 'm' && buffer[1] == 'o') {
-                min_bright = buffer[2]+buffer[3]+buffer[4] - 150;
-                if (min_bright <= 1) {
-                    if ( buffer[2] < 50 && buffer[3] < 50 && buffer[4] < 50)
-                        strip.fill(strip.Color(buffer[2] << 1, buffer[3] << 1, buffer[4] << 1), 0, LED_COUNT/*i * LED_COUNT/parts, LED_COUNT/parts*/);
-                    else 
-                        strip.fill(strip.Color(buffer[2] + (buffer[2]>>1), buffer[3] + (buffer[3]>>1), buffer[4] + (buffer[4]>>1)), 0, LED_COUNT/*i * LED_COUNT/parts, LED_COUNT/parts*/);     
-                } 
-                else
-                    strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
-                
-                strip.show();
-            }
-        }
+if (Serial.available() > 0) {
+    buffer[index++] = Serial.read();
+    if (index >= buffer_size) {
+      index = 0;
+        if (buffer[0] == 'm' && buffer[1] == 'o') {
+               min_bright = buffer[2]+buffer[3]+buffer[4] - 150;
+               if (min_bright <= 1) {
+                  if ( buffer[2] < 50 && buffer[3] < 50 && buffer[4] < 50) 
+                      strip.fill(strip.Color(buffer[2] << 1, buffer[3] << 1, buffer[4] << 1), 0, LED_COUNT/*i * LED_COUNT/parts, LED_COUNT/parts*/);
+                  else
+                    strip.fill(strip.Color(buffer[2] + (buffer[2]>>1), buffer[3] + (buffer[3]>>1), buffer[4] + (buffer[4]>>1)), 0, LED_COUNT/*i * LED_COUNT/parts, LED_COUNT/parts*/);
+               } else {
+                strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
+               }
+               
+               strip.show();
+         }
     }
 
 }
+}
+
+
+  
