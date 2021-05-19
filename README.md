@@ -20,9 +20,9 @@ Workaround: use Firefox or something else...
 ```
 
 The project got compiled by VS' release mode and only works on Windows 8.1 and higher with winSDK and x64. \
-More features will come soon. \
+More features will come soon. 
 
-Known bugs: Switching from or to a fullscreen mode programm cuases an access loss of the variables. Restart the Program and switch/'Alt+Tab' back to the game within 5 seconds. \ 
+Known bugs: Switching from or to a fullscreen mode programm cuases an access loss of the variables. Restart the Program and switch/'Alt+Tab' back to the game within 5 seconds. 
 
 Porting it to Linux would require a replacement of the AcquireNextFrame() function of the windows desktop duplication api and some other adjustments. \
 I'd suggest to grab the backbuffer of the GPU and load it in a \<D3D11Texture2D\>.
