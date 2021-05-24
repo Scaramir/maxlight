@@ -52,18 +52,43 @@ void setup() {
   #endif
   // END of Trinket-specific code.
 #endif
+
   strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
-  strip.show();            // Turn OFF all pixels ASAP
-  strip.setBrightness(255); // Set BRIGHTNESS to about 1/5 (max = 255)
+  strip.setBrightness(255);
   for (uint16_t i = 0; i < LED_COUNT; ++i) {
-      strip.setPixelColor(i, strip.Color(150, 0, 50));
+      strip.setPixelColor(i, strip.Color(255, 0, 0));
       strip.show();
-      delay(10);
+      delay(15);
   }
-  strip.fill(strip.Color(0, 0, 0), 0, LED_COUNT);
-  strip.show();
+  for (uint16_t i = 0; i <= 255; ++i){
+    strip.fill(strip.Color(255, 0, i), 0, LED_COUNT);
+    strip.show();
+    delay(15);
+  }
+
   Serial.begin(2000000);      // Check max. value for CH430 (~2M)
   Serial.print("ml");      // Send string to host 
+
+  strip.fill((strip.Color(0, 0, 0), 0, LED_COUNT));
+  strip.clear();
+  strip.show();
+  #if 0
+  delay(1500);
+  if (Serial.available() == 0) {
+    for (int i = 255; i >= 0; --i) {
+    strip.fill(strip.Color(i, 0, i), 0, LED_COUNT);
+    strip.show();
+    delay(10);
+    }
+    strip.fill((strip.Color(0, 0, 0), 0, LED_COUNT));
+    strip.clear();
+    strip.show();
+  }
+  strip.fill((strip.Color(0, 0, 0), 0, LED_COUNT));
+  strip.clear();
+  strip.show();
+  #endif
+
 }
 
 
@@ -75,6 +100,7 @@ if (Serial.available() > 0) {
     if (index >= buffer_size) {
       index = 0;
         if (buffer[0] == 'm' && buffer[1] == 'o') {
+               #if 0
                min_bright = buffer[2]+buffer[3]+buffer[4] - 150;
                if (min_bright <= 1) {
                   if ( buffer[2] < 50 && buffer[3] < 50 && buffer[4] < 50) 
@@ -84,7 +110,9 @@ if (Serial.available() > 0) {
                } else {
                 strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
                }
+               #endif
                
+               strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
                strip.show();
          }
     }
