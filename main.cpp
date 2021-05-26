@@ -53,7 +53,7 @@ namespace screen_capture {
 	std::vector<IDXGIAdapter1*> adapters;							// Needs to be Released()
 	static int chosen_adapter_num = 0;								// default adpater 
 	IDXGIAdapter1* chosen_adapter = nullptr;
-	int monitor_num = 0;											// outputs index
+	//int monitor_num = 0;											// outputs index; recently localized
 	std::vector<IDXGIOutput*> outputs;
 	CComPtrCustom<IDXGIOutput> output = nullptr;
 	int chosen_output_num = 0;
@@ -124,12 +124,13 @@ using namespace screen_capture;
  */
 int output_enumeration(INT16& i) {
 	int dx = 0;
+
 	while (DXGI_ERROR_NOT_FOUND != adapters[i]->EnumOutputs(dx, &output)) {
-		std::cout << "\t  (" << outputs.size() << ".) ";
+		int monitor_num = outputs.size();	// previous way: global namespace variable
+		std::cout << "\t  (" << monitor_num << ".) ";
 		printf("Found monitor %d on adapter: %lu \n", monitor_num, i);
-
 		outputs.push_back(output);	//store the found monitor
-
+		
 		DXGI_OUTPUT_DESC desc;		//get description of the monitor
 		HRESULT hr = outputs[monitor_num]->GetDesc(&desc);							
 		if (SUCCEEDED(hr)) {		//print info
@@ -156,7 +157,7 @@ int output_enumeration(INT16& i) {
 int check_monitor_devices() {
 	HRESULT hr = E_FAIL;
 
-	//Create device that's able to enumerate @adapters
+	//Create device that's able to enumerate adapters
 	IDXGIFactory1* factory = nullptr;
 	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&factory)); // winSDK and x64 needed for compilation
 	if (FAILED(hr)) { //(hr != 0 || hr != S_OK)
@@ -164,7 +165,7 @@ int check_monitor_devices() {
 		return -1;
 	}
 
-	//Enumerate the @adapters aka GPUs
+	//Enumerate the adapters aka GPUs
 	IDXGIAdapter1* adapter = nullptr;
 	INT16 i = 0;
 	while (DXGI_ERROR_NOT_FOUND != factory->EnumAdapters1(i, &adapter)) {
