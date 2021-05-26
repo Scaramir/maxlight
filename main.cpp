@@ -125,7 +125,6 @@ using namespace screen_capture;
 int output_enumeration(INT16& i) {
 	int dx = 0;
 	while (DXGI_ERROR_NOT_FOUND != adapters[i]->EnumOutputs(dx, &output)) {
-
 		std::cout << "\t  (" << outputs.size() << ".) ";
 		printf("Found monitor %d on adapter: %lu \n", monitor_num, i);
 
@@ -146,7 +145,7 @@ int output_enumeration(INT16& i) {
 		}
 		++monitor_num; ++dx;
 	}
-	return dx; //
+	return dx;
 }
 
 //Check for devices/adapters, monitors, and choose one
@@ -162,7 +161,6 @@ int check_monitor_devices() {
 	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&factory)); // winSDK and x64 needed for compilation
 	if (FAILED(hr)) { //(hr != 0 || hr != S_OK)
 		printf("Error: failed to retrieve the IDXGIFactory.\n");
-		exit(EXIT_FAILURE);
 		return -1;
 	}
 
@@ -175,7 +173,6 @@ int check_monitor_devices() {
 	}
 	if (adapters.empty()) {
 		printf("Error: no adapter found. Enumaration fails accordingly. \n\tSomething went really wrong! ...\n");
-		exit(EXIT_FAILURE);
 		return -1;
 	}
 
@@ -284,7 +281,6 @@ int create_and_get_device(int &chosen_monitor) {
 	if (FAILED(hr) || device == nullptr) {
 			printf("Error: failed to create a D3D11 Device and Context.\n"); 
 			context.Release();
-			exit(EXIT_FAILURE);
 			return -1;
 	}
 
@@ -297,14 +293,12 @@ int create_and_get_device(int &chosen_monitor) {
 	chosen_output = outputs[chosen_output_num];
 	if (chosen_output == nullptr) {
 		std::cout << "Selected Monitor '" << chosen_output_num << "' is invalid. ";
-		exit(EXIT_FAILURE);
 		return -2;
 	}
 
 	hr = chosen_output->QueryInterface(__uuidof(IDXGIOutput1), (void**)&output1);
 	if (FAILED(hr)) {
 		std::cout << "QueryInterface failed." << "\n";
-		exit(EXIT_FAILURE);
 		return -3;
 	}
 	chosen_output->Release();
@@ -313,7 +307,6 @@ int create_and_get_device(int &chosen_monitor) {
 	hr = output1->DuplicateOutput(device, &desktop_duplication);
 	if (FAILED(hr)) {
 		std::cout << "Error: Desktop duplication failed." << "\n";
-		exit(EXIT_FAILURE);
 		return -4; 
 	}
 	output1.Release();
@@ -369,7 +362,6 @@ bool get_frame() {
 	desktop_duplication->GetDesc(&desktop_duplicate_desc);
 	if (desktop_duplicate_desc.DesktopImageInSystemMemory == TRUE) {
 		std::cout << "Desktop image is in system memory and this is not want we want.\nAbort..." << "\n";
-		exit(EXIT_FAILURE);
 		return false;
 	} 
 	// outsource this check into another loop, before you call get_frame(); ? 

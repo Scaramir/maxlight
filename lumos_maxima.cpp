@@ -10,7 +10,8 @@
 //
 // Just use a WS2812b, an arduino and a compatible power supply.
 // For led strips consuming <= 15W, you can solder the 5v wire of the usb cable directly
-//   to the board and make use of power share (BIOS and Motherboard dependable)
+//   to the board and make use of power share (BIOS and Motherboard dependable), but this
+//	 not recommended. 
 // Costs: max.: 45€ for 5m 
 // Compile and load with Arduino-IDE and install Adafruits'library beforehand. 
 // Use the old bootloader, in case ur using CH430   
