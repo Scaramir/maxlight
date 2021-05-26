@@ -53,7 +53,6 @@ namespace screen_capture {
 	std::vector<IDXGIAdapter1*> adapters;							// Needs to be Released()
 	static int chosen_adapter_num = 0;								// default adpater 
 	IDXGIAdapter1* chosen_adapter = nullptr;
-	//int monitor_num = 0;											// outputs index; recently localized
 	std::vector<IDXGIOutput*> outputs;
 	CComPtrCustom<IDXGIOutput> output = nullptr;
 	int chosen_output_num = 0;
@@ -126,7 +125,7 @@ int output_enumeration(INT16& i) {
 	int dx = 0;
 
 	while (DXGI_ERROR_NOT_FOUND != adapters[i]->EnumOutputs(dx, &output)) {
-		int monitor_num = outputs.size();	// previous way: global namespace variable
+		int monitor_num = outputs.size();	// current monitor index
 		std::cout << "\t  (" << monitor_num << ".) ";
 		printf("Found monitor %d on adapter: %lu \n", monitor_num, i);
 		outputs.push_back(output);	//store the found monitor
