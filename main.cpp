@@ -54,7 +54,6 @@ namespace screen_capture {
 	static int chosen_adapter_num = 0;								// default adpater 
 	IDXGIAdapter1* chosen_adapter = nullptr;
 	std::vector<IDXGIOutput*> outputs;
-	CComPtrCustom<IDXGIOutput> output = nullptr;
 	int chosen_output_num = 0;
 	static IDXGIOutput* chosen_output = 0;
 //check_cpu_access()
@@ -123,6 +122,7 @@ using namespace screen_capture;
  */
 int output_enumeration(INT16& i) {
 	int dx = 0;
+	CComPtrCustom<IDXGIOutput> output = nullptr;
 
 	while (DXGI_ERROR_NOT_FOUND != adapters[i]->EnumOutputs(dx, &output)) {
 		int monitor_num = outputs.size();	// current monitor index
@@ -176,7 +176,7 @@ int check_monitor_devices() {
 		return -1;
 	}
 
-	//Print list of adapters and push corresponding @outputs
+	//Print list of adapters and push corresponding outputs
 	std::cout << "Following graphics adapters (GPUs) are found:" << "\n";
 	for (INT16 i = 0; i < adapters.size(); ++i) {
 		DXGI_ADAPTER_DESC1 desc;
@@ -625,7 +625,7 @@ bool send_data(Pixel &mean_color_new){
  * @brief performance check of the system using different sleep timers. 
  * @return true, if performance check got executed.
  */ 
-bool benchmark() {
+bool setup_and_benchmark() {
 
 	std::cout << "Begin a performance check? Start a 60fps video or stream and type 'y'\n";
 	std::cin.clear();
@@ -735,7 +735,7 @@ int main() {
 
 	configuration();
 
-	if (!benchmark())
+	if (!setup_and_benchmark())
 		return -2;
 
 	while (true) {
