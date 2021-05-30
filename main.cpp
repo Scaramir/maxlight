@@ -1,11 +1,11 @@
-#include <windows.h>
+/**
+ * "MaxLight" got created by Maximilian Otto, March 2021, Berlin
+ */
+
 #include <iostream>
-#include <stdio.h>
 #include <sstream> 
-#include <stdlib.h>
 //#include <DXGI.h>
 #include <dxgi1_2.h>        //include-order
-//#include <d3d12.h>        //let's make d11 first
 #include <d3d11.h>
 #include <memory>
 #include <algorithm>
