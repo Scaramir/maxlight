@@ -46,7 +46,7 @@ UINT gNumFeatureLevels = ARRAYSIZE(gFeatureLevels);
 namespace screen_capture {
 //main:
 	UINT sleepTimerMs = (int)(((float)1 / 33) * 1000);
-	UINT fps = 30;
+	UINT fps = 35;
 	void set_sleepTimerMs(unsigned int& fps) { if (fps == 0) sleepTimerMs = 0; else sleepTimerMs = ((int)(((float)1 / fps) * 1000)-1); }
 	HRESULT hr = E_FAIL;
 //output_enumeration() + check_monitor_devices()
@@ -402,9 +402,9 @@ bool get_frame() {
 			std::cout << "Error: 'frame_texture_ori' is nullptr\n";
 		new_frame = true; 
 		frame.Release();
-		++acquired_frames_count;  //benchmark
 	} 
 
+	//making it CPU accessible
 	context->CopyResource(frame_texture, frame_texture_ori);
 
 	/**
@@ -626,8 +626,7 @@ bool send_data(Pixel &mean_color_new){
  * @return true, if performance check got executed.
  */ 
 bool setup_and_benchmark() {
-
-	std::cout << "Begin a performance check? Start a 60fps video or stream and type 'y'\n";
+	std::cout << "\nBegin a performance check? ('y' / 'n'):\n\tHint: Start a high-fps video or stream before you type 'y'\n";
 	std::cin.clear();
 	std::string bench;
 	std::cin >> bench;
@@ -643,12 +642,13 @@ bool setup_and_benchmark() {
 	Sleep(1000);
 	create_and_get_device(chosen_output_num);
 
-	std::vector<uint8_t> fps_vec = {25, 30, 60, 0};
+	std::cout << "I will run a test for 50 seconds, now.\n";
+	UINT user_fps = fps;
+	std::vector<uint32_t> fps_vec = {user_fps, 25, 30, 60, 0};
 	for (size_t i = 0; i < fps_vec.size(); ++i) {
 		std::cout << "\n---Checking for max. " << (int)fps_vec[i] << "fps:---\n";
 
 		int get_frame_call = 0;
-		acquired_frames_count = 0;
 		mapped_frames_counter = 0;
 		fps = fps_vec[i];
 		set_sleepTimerMs(fps);
@@ -671,17 +671,15 @@ bool setup_and_benchmark() {
 			}
 			++get_frame_call;
 		}
-
-		std::cout << "get_frame() got " << get_frame_call << " times called\n";
-		//std::cout << "Aquired_frames_counter: " << acquired_frames_count << "\n";
-		std::cout << "Mapped_frames_counter: " << mapped_frames_counter << "\n";
+		std::cout << "I looped exactly " << get_frame_call << " times.\n";
+		std::cout << "I captured: ~" << mapped_frames_counter/10 << " fps.\n";
 		/*
 		std::cout << "fail_invalid: " << fail_invalid << "\n";
 		std::cout << "fail_1: " << fail_1 << "\n";
 		std::cout << "fail_2: " << fail_2 << "\n";
 		*/
 	}
-	fps = 30; 		// reset
+	set_sleepTimerMs(user_fps); 		// reset
 	
 	return true;
 }
