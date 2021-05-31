@@ -24,12 +24,12 @@ Serial::Serial(const char* portName)
         if (GetLastError() == ERROR_FILE_NOT_FOUND) {
 
             //Print Error if neccessary
-            printf("ERROR: Handle was not attached. Reason: %s not available.\n", portName);
+            //printf("ERROR: Handle was not attached. Reason: %s not available.\n", portName);
 
         }
         else
         {
-            printf("ERROR!!!");
+            printf("ERROR!!!\n");
         }
     }
     else
@@ -41,7 +41,7 @@ Serial::Serial(const char* portName)
         if (!GetCommState(this->hSerial, &dcbSerialParams))
         {
             //If impossible, show an error
-            printf("failed to get current serial parameters!");
+            printf("failed to get current serial parameters!\n");
         }
         else
         {
@@ -57,7 +57,7 @@ Serial::Serial(const char* portName)
             //Set the parameters and check for their proper application
             if (!SetCommState(hSerial, &dcbSerialParams))
             {
-                printf("ALERT: Could not set Serial Port parameters");
+                printf("ALERT: Could not set Serial Port parameters\n");
             }
             else
             {
