@@ -79,7 +79,8 @@ namespace screen_capture {
 	int fail_4 = 0;
 	int fail_5 = 0;
 //arduino connection 
-	const char serial_port[] = { 'C', 'O', 'M', '7' };				// usb port name 
+	//const char serial_port[] = { 'C', 'O', 'M', '7' };				// usb port name 
+		const char serial_port[] = { 'C', 'O', 'M' };	
 	char usb_port_number = '7';
 	Serial* SP;
 //led_stuff:
@@ -617,12 +618,19 @@ Pixel fade(Pixel &mean_pixel) {
  * @brief connect the program with the micro controller 
  * @return bool connected
  */
-bool connection_setup(){
+bool connection_setup() {
 	terminal_fill("\nTrying to connect with the LED controller\n\t...\n");
-	SP = new Serial(serial_port);
-	if (SP->IsConnected())
-		terminal_fill("Connection established! Let in the light!\n");
-		
+
+	for (int i = 0; i < 10; ++i) {
+		std::string s = "COM";
+		s.push_back((char)(i + 48));
+		const char* c = s.c_str();
+		SP = new Serial(c);
+		if (SP->IsConnected()) {
+			terminal_fill("Connection established! Let in the light!\n");
+			break;
+		}
+	}
 	return SP->IsConnected();
 }
 
@@ -631,7 +639,7 @@ bool connection_setup(){
  * @param mean_color_new, the new color values to be sent. 
  * @return true, if send_data() worked or frame was 'black'.
  */ 
-bool send_data(Pixel &mean_color_new){
+bool send_data(Pixel &mean_color_new) {
 	if (mean_color_new.r == 0 && mean_color_new.g == 0 && mean_color_new.b == 0)
 		return true;
 	uint8_t buffer[5] = {'m', 'o', (uint8_t)mean_color_new.r, (uint8_t)mean_color_new.g, (uint8_t)mean_color_new.b};
@@ -788,3 +796,22 @@ int main() {
 	//TODO: Clean Up !
 	return 0;
 }
+
+
+
+/*
+# MaxLight v1.0
+### First working version.
+
+The 'lumos_maxima.cpp' needs to be installed on the Arduino Nano and the LEDs attached to it and powered. 
+### This works currently only on COM7 / USB-Port 7 
+change the port number your self and compile it again to get it working. 
+
+The whole code is cramped in 'main.cpp', but the different functions will get outsourced, soon. 
+So, restructuring the code is still necessary. 
+I'll improve this project whenever I have a few minutes to work in my free time.
+There are still some essential bugs as described in 'readme.md'.
+I guarantee for nothing!
+
+This is a private project and without any further declaration of a differentiated LICENSE.md, which I'll update within the next version, GitHub's standard copyright and licensing come into effect.
+*/
