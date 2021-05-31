@@ -128,7 +128,7 @@ void terminal_fill(std::string s, int c = 10){
 
     for (char& c : s ){
         std::cout << c;
-        Sleep(30);
+        Sleep(20);
     }
     
     return;
