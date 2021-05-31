@@ -213,7 +213,7 @@ int check_monitor_devices() {
 	}
 
 	//select monitor and adapter for analyzation
-	terminal_fill("\nWhich monitor do you choose?\n\tType the number (x.) of the monitor.\n");
+	terminal_fill("\nWhich monitor do you choose?\n\tType the number (x.) of the monitor.\n", 13);
 	std::cin.clear(); //yaya, use scanl, getline, anything but cin 
 	std::cin >> chosen_output_num; 
 	///fix device creation for this:
