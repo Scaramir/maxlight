@@ -72,16 +72,8 @@ namespace screen_capture {
 //benchmark
 	int acquired_frames_count = 0;
 	int mapped_frames_counter = 0;
-	int fail_invalid = 0;
-	int fail_1 = 0;
-	int fail_2 = 0;
-	int fail_3 = 0;
-	int fail_4 = 0;
-	int fail_5 = 0;
 //arduino connection 
 	//const char serial_port[] = { 'C', 'O', 'M', '7' };				// usb port name 
-		const char serial_port[] = { 'C', 'O', 'M' };	
-	char usb_port_number = '7';
 	Serial* SP;
 //led_stuff:
 	struct Pixel {
@@ -400,13 +392,10 @@ bool get_frame() {
 	//get accumulated frames
 	hr = desktop_duplication->AcquireNextFrame(5, &frame_info, &frame); // making use of win desktop duplication apis' core function
 	if (hr == DXGI_ERROR_INVALID_CALL) {
-		++fail_invalid;
 		return false;
 	} if (hr == E_INVALIDARG) {
-		++fail_1;
 		return false;
 	} if (frame_info.AccumulatedFrames == 0) {
-		++fail_2;
 		return false;
 	} if (FAILED(hr) && hr != DXGI_ERROR_WAIT_TIMEOUT) {
 		device.Release();
