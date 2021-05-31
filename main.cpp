@@ -114,6 +114,26 @@ namespace screen_capture {
 using namespace screen_capture;
 //#############################################################################################
 
+/**
+ * @brief unrolling text on terminal
+ * @param text to print 
+ * @param color-value default=10 (green), red would be '12'.
+ */ 
+void terminal_fill(std::string s, int c = 10){
+    if(s.empty())
+        return;
+    
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, c);
+
+    for (char& c : s ){
+        std::cout << c;
+        Sleep(35);
+    }
+    
+    return;
+}
+
 //Check Devices for outputs
 /**
  * @brief check monitors (outputs) for a graphic adpater and push it into vec<output>
@@ -599,7 +619,7 @@ Pixel fade(Pixel &mean_pixel) {
  * @return bool connected
  */
 bool connection_setup(){
-	std::cout << "Trying to connect with the LED controller\n\t...\n";
+	std::cout << "\nTrying to connect with the LED controller\n\t...\n";
 	SP = new Serial(serial_port);
 	if (SP->IsConnected())
 		std::cout << "Connection established! Let in the light!\n";
@@ -646,7 +666,7 @@ bool setup_and_benchmark() {
 	UINT user_fps = fps;
 	std::vector<uint32_t> fps_vec = {user_fps, 25, 30, 60, 0};
 	for (size_t i = 0; i < fps_vec.size(); ++i) {
-		std::cout << "\n---Checking for max. " << (int)fps_vec[i] << "fps:---\n";
+		std::cout << "\n--- Checking for max. " << (int)fps_vec[i] << "fps: ---\n";
 
 		int get_frame_call = 0;
 		mapped_frames_counter = 0;
@@ -712,10 +732,11 @@ bool configuration() {
 		std::cin.clear();
 		std::cin >> fade_val;
 	} else {
-		std::cout << "\nProceeding with following settings:\n";
+		std::cout << "\n--- Proceeding with following settings: ---\n";
 		std::cout << "\tMin.Brightness per Pixel: " << (int)min_brightness_per_pixel << "\n";
 		std::cout << "\tMin. Saturation per Pixel: " << (int)min_saturation_per_pixel << "\n";
 		std::cout << "\tFading factor: " << fade_val << "\n";
+		std::cout << "\tMax. fps: " << fps << "\n";
 	}
 	return true; 
 }
@@ -724,7 +745,8 @@ bool configuration() {
 //##################################### M A I N ###############################################
 //###################################### v1.0 #################################################
 int main() {
-	
+	terminal_fill("--- MaxLight v1.0 --- Max 2021 ---\n\n\n");
+
 	chosen_output_num = check_monitor_devices(); 
 	if (chosen_output_num < 0 || chosen_output_num >= outputs.size()) {
 		std::cout << "\n(main1): Something went terribly wrong. --> Exit" << "\n";
