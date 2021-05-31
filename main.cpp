@@ -128,7 +128,7 @@ void terminal_fill(std::string s, int c = 10){
 
     for (char& c : s ){
         std::cout << c;
-        Sleep(35);
+        Sleep(30);
     }
     
     return;
@@ -744,6 +744,8 @@ bool configuration() {
 //##################################### M A I N ###############################################
 //###################################### v1.0 #################################################
 int main() {
+	LPCWSTR title = L"MaxLight";
+	SetConsoleTitle(title);
 	terminal_fill("--- MaxLight v1.0 --- Max 2021 ---\n\n\n");
 
 	chosen_output_num = check_monitor_devices(); 
@@ -757,6 +759,8 @@ int main() {
 	if (!setup_and_benchmark())
 		return -2;
 
+	terminal_fill("\n--- Starting continues analyzation ---\n");
+	
 	while (true) {
 		mean_color_old = mean_color_new;				// used in 'fade()'
 		if (get_frame()) { 								// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
