@@ -73,7 +73,7 @@ namespace screen_capture {
 	int acquired_frames_count = 0;
 	int mapped_frames_counter = 0;
 //arduino connection 
-	//const char serial_port[] = { 'C', 'O', 'M', '7' };				// usb port name 
+	//const char serial_port[] = { 'C', 'O', 'M', '7' };			// usb port name 
 	Serial* SP;
 //led_stuff:
 	struct Pixel {
@@ -507,7 +507,7 @@ bool reject_sub_pixel(Pixel &curr_pixel) {
 		return false;
 	else
 		return ( !( (curr_pixel.b >= min_brightness_per_pixel) || (curr_pixel.g >= min_brightness_per_pixel) || (curr_pixel.r >= min_brightness_per_pixel) ) || ( (abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel) && (abs(curr_pixel.b - curr_pixel.r) < min_saturation_per_pixel) ) );
-	//((curr_pixel.b < 150) && (curr_pixel.g < 150) && (curr_pixel.r < 150)) || ( round(curr_pixel.b / 10.0) == round(curr_pixel.g / 10.0) == round(curr_pixel.r / 10.0) )
+	//alternative: ((curr_pixel.b < 150) && (curr_pixel.g < 150) && (curr_pixel.r < 150)) || ( round(curr_pixel.b / 10.0) == round(curr_pixel.g / 10.0) == round(curr_pixel.r / 10.0) )
 }
 
 //true gamme correction:
@@ -785,22 +785,3 @@ int main() {
 	//TODO: Clean Up !
 	return 0;
 }
-
-
-
-/*
-# MaxLight v1.0
-### First working version.
-
-The 'lumos_maxima.cpp' needs to be installed on the Arduino Nano and the LEDs attached to it and powered. 
-### This works currently only on COM7 / USB-Port 7 
-change the port number your self and compile it again to get it working. 
-
-The whole code is cramped in 'main.cpp', but the different functions will get outsourced, soon. 
-So, restructuring the code is still necessary. 
-I'll improve this project whenever I have a few minutes to work in my free time.
-There are still some essential bugs as described in 'readme.md'.
-I guarantee for nothing!
-
-This is a private project and without any further declaration of a differentiated LICENSE.md, which I'll update within the next version, GitHub's standard copyright and licensing come into effect.
-*/
