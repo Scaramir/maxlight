@@ -1,5 +1,5 @@
 /**
- * "MaxLight" got created by Maximilian Otto, March 2021, Berlin
+ * "MaxLight" got created by Maximilian Otto ©, March 2021, Berlin
  */
 
 #include <iostream>
@@ -757,7 +757,7 @@ int main() {
 	if (!setup_and_benchmark())
 		return -2;
 
-	terminal_fill("\n--- Starting continues analyzation ---\n");
+	terminal_fill("\n--- Starting continues analyzation ---\n\n");
 	
 	while (true) {
 		mean_color_old = mean_color_new;				// used in 'fade()'
@@ -772,8 +772,8 @@ int main() {
 			}
 		}
 		//prints:
-		//if (mapped_frames_counter % (fps+1) == 0)
-			//std::cout << "new_avg_pixel: " << mean_color_new.r << "r " << mean_color_new.g << "g " << mean_color_new.b << "b\n";
+		if (mapped_frames_counter % (fps+1) == 0)
+			std::cout << "new_avg_pixel: " << mean_color_new.r << "r, " << mean_color_new.g << "g, " << mean_color_new.b << "b   \r";
 	
 	}
 
