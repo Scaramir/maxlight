@@ -80,6 +80,7 @@ namespace screen_capture {
 	int fail_5 = 0;
 //arduino connection 
 	const char serial_port[] = { 'C', 'O', 'M', '7' };				// usb port name 
+	char usb_port_number = '7';
 	Serial* SP;
 //led_stuff:
 	struct Pixel {
