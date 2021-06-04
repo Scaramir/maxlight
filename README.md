@@ -5,7 +5,7 @@ It is not another copy of an Ambilight system, but can be used for it if you'd a
 Instead, it's a room light to destress the eyes and raise the immersive power of entertainment setups, like in this quick/temp. setup:
 
 
-<img src="https://user-images.githubusercontent.com/29096190/120733553-bbab7e80-c4e7-11eb-9283-43d97362c2dc.gif" width="300" height="150" /> 
+<p align="center"><img src="https://user-images.githubusercontent.com/29096190/120733553-bbab7e80-c4e7-11eb-9283-43d97362c2dc.gif" width="320" height="160" /></p>
 
 
 
