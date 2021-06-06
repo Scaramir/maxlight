@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include <sstream> 
-//#include <DXGI.h>
 #include <dxgi1_2.h>        //include-order
 #include <d3d11.h>
 #include <memory>
@@ -21,7 +20,6 @@
 
 #pragma comment(lib, "dxgi") //this is for CreateDXGIFactory1()
 #pragma comment(lib, "d3d11")
-//#pragma comment(lib, "windowscodecs.lib")
 
 
 //#############################################################################################
@@ -67,13 +65,10 @@ namespace screen_capture {
 	UINT8 min_brightness_per_pixel = 50;							//                  160;
 //get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
-	CComPtrCustom<ID3D11Texture2D> frame_texture_ori = nullptr;
 	D3D11_MAPPED_SUBRESOURCE mapped_subresource;
 //benchmark
-	int acquired_frames_count = 0;
 	int mapped_frames_counter = 0;
 //arduino connection 
-	//const char serial_port[] = { 'C', 'O', 'M', '7' };			// usb port name 
 	Serial* SP;
 //led_stuff:
 	struct Pixel {
@@ -360,6 +355,7 @@ int create_and_get_device(int &chosen_monitor) {
 bool get_frame() {
 	bool new_frame = false;
 	CComPtrCustom<IDXGIResource> frame = nullptr;
+	CComPtrCustom<ID3D11Texture2D> frame_texture_ori = nullptr;
 	DXGI_OUTDUPL_FRAME_INFO frame_info;
 
 #if 0
@@ -507,7 +503,6 @@ bool reject_sub_pixel(Pixel &curr_pixel) {
 		return false;
 	else
 		return ( !( (curr_pixel.b >= min_brightness_per_pixel) || (curr_pixel.g >= min_brightness_per_pixel) || (curr_pixel.r >= min_brightness_per_pixel) ) || ( (abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel) && (abs(curr_pixel.b - curr_pixel.r) < min_saturation_per_pixel) ) );
-	//alternative: ((curr_pixel.b < 150) && (curr_pixel.g < 150) && (curr_pixel.r < 150)) || ( round(curr_pixel.b / 10.0) == round(curr_pixel.g / 10.0) == round(curr_pixel.r / 10.0) )
 }
 
 //true gamme correction:
@@ -523,15 +518,6 @@ std::vector<std::vector<uint8_t>> setup_gamma(){
 	  gamma[i][2] = (uint8_t)(f * 220.0);
 	}
 	return gamma; 
-}
-
-//TODO
-void adjust_pixel(Pixel &mean_pixel) {
-	mean_pixel.b ;
-	mean_pixel.g ;
-	mean_pixel.r;
-	
-	return; 
 }
 #endif
 
@@ -556,7 +542,7 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE &mapped_subresource) {
 	int pixel_amount = 0;
 	for (UINT row = 0; row < height; row = row + 2) {							    // +2 instead of ++ drops half the resolution
 		UINT row_start = row * mapped_subresource.RowPitch / 4;
-		for (UINT col = 0; col < width; col = col + 3) {						    // col + quality_loss 
+		for (UINT col = 0; col < width; col = col + 2) {						    // col + quality_loss 
 
 			curr_pixel.b = pixel_array_source[row_start + col * 4 + 0];             // first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
 			curr_pixel.g = pixel_array_source[row_start + col * 4 + 1];
@@ -690,11 +676,6 @@ bool setup_and_benchmark() {
 		}
 		terminal_fill("I looped exactly " + std::to_string(get_frame_call) + " times.\n", 14);
 		terminal_fill("I captured: ~" + std::to_string(mapped_frames_counter/10) + " fps.\n", 14);
-		/*
-		std::cout << "fail_invalid: " << fail_invalid << "\n";
-		std::cout << "fail_1: " << fail_1 << "\n";
-		std::cout << "fail_2: " << fail_2 << "\n";
-		*/
 	}
 	set_sleepTimerMs(user_fps); 		// reset
 	
@@ -782,6 +763,6 @@ int main() {
 	std::cin.ignore();
 
 	//oupsie:
-	//TODO: Clean Up !
+	//TODO: proper Clean-Up !
 	return 0;
 }
