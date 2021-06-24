@@ -31,7 +31,8 @@ More features will come soon. \
 
 
 Known bugs: \
-Switching from or to a fullscreen mode programm causes an access loss of the variables or stucks in an api-function. Restart the Program and switch/'Alt+Tab' back to the game within 5 seconds. This accounts to every display mode switch (change of resolution, lockscreen, changing games from window mode to fullscreen, ...).
+Rotated monitors won't get captured. I will re-read how windows passes rotated frames and pass the rotation-mode to the functions. 
+Switching from or to a fullscreen mode programm causes an access loss of the variables or stucks in an api-function. Restart the Program and switch/'Alt+Tab' back to the game within 5 seconds. This accounts to every display-mode switch (change of resolution, lockscreen, changing games from window mode to fullscreen, ...).
 
 
 Porting it to Linux would require a replacement of the AcquireNextFrame() function of the windows desktop duplication api and some other adjustments. \
