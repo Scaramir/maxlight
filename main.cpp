@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <sstream> 
+ //#include <DXGI.h>
 #include <dxgi1_2.h>        //include-order
 #include <d3d11.h>
 #include <memory>
@@ -24,7 +25,7 @@
 
 //#############################################################################################
 // Driver types supported
-D3D_DRIVER_TYPE gDriverTypes[] = {D3D_DRIVER_TYPE_HARDWARE};
+D3D_DRIVER_TYPE gDriverTypes[] = { D3D_DRIVER_TYPE_HARDWARE };
 UINT gNumDriverTypes = ARRAYSIZE(gDriverTypes);
 
 // Customized feature level support
@@ -42,25 +43,24 @@ UINT gNumFeatureLevels = ARRAYSIZE(gFeatureLevels);
 //#############################################################################################
 ///Declaration of global variables:
 namespace screen_capture {
-//main:
+	//main:
 	UINT sleepTimerMs = (int)(((float)1 / 33) * 1000);
 	UINT fps = 35;
-	void set_sleepTimerMs(unsigned int& fps) { if (fps == 0) sleepTimerMs = 0; else sleepTimerMs = ((int)(((float)1 / fps) * 1000)-1); }
+	void set_sleepTimerMs(unsigned int& fps) { if (fps == 0) sleepTimerMs = 0; else sleepTimerMs = ((int)(((float)1 / fps) * 1000) - 1); }
 	HRESULT hr = E_FAIL;
-//output_enumeration() + check_monitor_devices()
+	//output_enumeration() + check_monitor_devices()
 	std::vector<IDXGIAdapter1*> adapters;							// Needs to be Released()
 	static int chosen_adapter_num = 0;								// default adpater 
 	IDXGIAdapter1* chosen_adapter = nullptr;
 	std::vector<IDXGIOutput*> outputs;
-	int chosen_output_num = 0;
-	static IDXGIOutput* chosen_output = 0;
-//check_cpu_access()
+	static int chosen_output_num = 0;
+	//check_cpu_access()
 	D3D11_TEXTURE2D_DESC texture_desc;
-//create_and_get_device()
+	//create_and_get_device()
 	CComPtrCustom<ID3D11Device> device = nullptr;
 	CComPtrCustom<ID3D11DeviceContext> context = nullptr;
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
-//reject_sub_pixel()
+	//reject_sub_pixel()
 	UINT8 min_saturation_per_pixel = 18;							// optional accents: 60;
 	UINT8 min_brightness_per_pixel = 50;							//                  160;
 //get_frame()
@@ -69,12 +69,13 @@ namespace screen_capture {
 //benchmark
 	int mapped_frames_counter = 0;
 //arduino connection 
+	const char serial_port[] = { 'C', 'O', 'M', '7' };			    // usb port name 
 	Serial* SP;
 //led_stuff:
 	struct Pixel {
 	public:
 		int b = 0;	                   								// initialized to 'black'; 
-		int g = 0; 
+		int g = 0;
 		int r = 0;
 	};
 //fade:
@@ -83,44 +84,44 @@ namespace screen_capture {
 	Pixel mean_color_new;
 
 	const uint8_t gamma8[] = {
-					0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    
-					0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,    
-					1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,    
+					0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+					0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,
+					1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,
 					2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
-					5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,  
-					10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,   
-					17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,   
-					25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,   
-					37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,   
-					51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,   
-					69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,   
-					90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,  
-					115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,  
-					144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,  
-					177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,  
+					5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,
+					10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,
+					17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,
+					25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,
+					37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,
+					51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,
+					69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,
+					90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,
+					115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,
+					144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,
+					177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
 					215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
-}; 
+};
 using namespace screen_capture;
 //#############################################################################################
 
 /**
  * @brief unrolling text on terminal
- * @param text to print 
+ * @param text to print
  * @param color-value default=10 (green), red would be '12'.
- */ 
-void terminal_fill(std::string s, int c = 10){
-    if(s.empty())
-        return;
-    
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(hConsole, c);
+ */
+void terminal_fill(std::string s, int c = 10) {
+	if (s.empty())
+		return;
 
-    for (char& c : s ){
-        std::cout << c;
-        Sleep(20);
-    }
-    
-    return;
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(hConsole, c);
+
+	for (char& c : s) {
+		std::cout << c;
+		Sleep(15);
+	}
+
+	return;
 }
 
 //Check Devices for outputs
@@ -138,16 +139,16 @@ int output_enumeration(INT16& i) {
 		std::cout << "\t  (" << monitor_num << ".) ";
 		printf("Found monitor %d on adapter: %lu \n", monitor_num, i);
 		outputs.push_back(output);	//store the found monitor
-		
+
 		DXGI_OUTPUT_DESC desc;		//get description of the monitor
-		HRESULT hr = outputs[monitor_num]->GetDesc(&desc);							
+		HRESULT hr = outputs[monitor_num]->GetDesc(&desc);
 		if (SUCCEEDED(hr)) {		//print info
 			wprintf(L"\t\tMonitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'Y' : 'n');
 			std::cout << "\t\twith the following dimensions:\n\t\t " <<
-			abs(abs((int)desc.DesktopCoordinates.right) - abs((int)desc.DesktopCoordinates.left)) <<
+			   abs(abs((int)desc.DesktopCoordinates.right) - abs((int)desc.DesktopCoordinates.left)) <<
 				" x " <<
-			abs(abs((int)desc.DesktopCoordinates.top) - abs((int)desc.DesktopCoordinates.bottom)) <<
-				" pixel" << "\n"; 
+				abs(abs((int)desc.DesktopCoordinates.top) - abs((int)desc.DesktopCoordinates.bottom)) <<
+				" pixel" << "\n";
 		} else {
 			terminal_fill("Error: failed to retrieve a DXGI_OUTPUT_DESC for output " + std::to_string(i) + ".\nContinue\n", 12);
 			continue;
@@ -204,7 +205,7 @@ int check_monitor_devices() {
 	//select monitor and adapter for analyzation
 	terminal_fill("\nWhich monitor do you choose?\n\tType the number (x.) of the monitor.\n", 13);
 	std::cin.clear(); //yaya, use scanl, getline, anything but cin 
-	std::cin >> chosen_output_num; 
+	std::cin >> chosen_output_num;
 	///fix device creation for this:
 	//std::cout << "Which graphics adapter do you choose?\n\tType the number of adapter." << "\n";
 	std::cin.clear();
@@ -218,13 +219,13 @@ int check_monitor_devices() {
  * this can be stored in system memory or as a shader-texture
  * @return int != 0 if texture is not accessible
  */
-int check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D> &frame_texture) {
-//create a texture with cpu_access_read
+int check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D>& frame_texture) {
+	//create a texture with cpu_access_read
 	if (frame_texture != nullptr)
-		return 0; 
-	else 
+		return 0;
+	else
 		printf("Creating new 2DTexture\n");
-	
+
 	D3D11_SUBRESOURCE_DATA sub_data = {
 		sub_data.pSysMem = std::calloc(texture_desc.Width * texture_desc.Height, 4),
 		sub_data.SysMemPitch = 4 * texture_desc.Width,
@@ -232,10 +233,11 @@ int check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D> &frame_texture) {
 	};
 
 	HRESULT hr = device->CreateTexture2D(&texture_desc, &sub_data, &frame_texture);
-	if (S_OK!=hr) {
+	if (S_OK != hr) {
 		terminal_fill("Error: Failed to create the 2DTexture.\n", 12);
 		return -5;
-	} else
+	}
+	else
 		printf("'CreateTexture2D()' was successful!\n");
 
 	return 0;
@@ -245,55 +247,54 @@ int check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D> &frame_texture) {
 /**
  * @brief create device (D3D11) for @chosen_monitor
  * @param chosen_monitor number of monitor (retrieve of @outputs)
- * @return success (0) or fail (negativ) 
+ * @return success (0) or fail (negativ)
  */
-int create_and_get_device(int &chosen_monitor) {
+int create_and_get_device(int& chosen_monitor) {
 
 	D3D_FEATURE_LEVEL feature_level;
 	CComPtrCustom<IDXGIOutput1> output1 = nullptr;
+	IDXGIOutput* chosen_output = 0;
 
 	for (UINT driver_type_index = 0; driver_type_index < gNumDriverTypes; ++driver_type_index) {
 		hr = D3D11CreateDevice(
-				nullptr,						// Adapter: The adapter (video card) we want to use. We may use nullptr to pick the default adapter. 
-				gDriverTypes[driver_type_index],// DriverType: We use the GPU as backing device. 
-				nullptr,						// Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicaple.
-				0,								// D3D11_CREATE_DEVICE_FLAG 
-				gFeatureLevels,					// Feature Levels (ptr to array): order of versions to use. 
-				gNumFeatureLevels,				// Number of feature levels. according to defaults Array
-				D3D11_SDK_VERSION,				// The SDK version, use D3D11_SDK_VERSION 
-				&device,						// OUT: the ID3D11Device object. 
-				&feature_level,					// OUT: the selected feature level. 
-				&context						// OUT: the ID3D11DeviceContext that represents the above features. 
-			 );						
+			nullptr,						// Adapter: The adapter (video card) we want to use. We may use nullptr to pick the default adapter. 
+			gDriverTypes[driver_type_index],// DriverType: We use the GPU as backing device. 
+			nullptr,						// Software: we're using a D3D_DRIVER_TYPE_HARDWARE so it's not applicaple.
+			0,								// D3D11_CREATE_DEVICE_FLAG 
+			gFeatureLevels,					// Feature Levels (ptr to array): order of versions to use. 
+			gNumFeatureLevels,				// Number of feature levels. according to defaults Array
+			D3D11_SDK_VERSION,				// The SDK version, use D3D11_SDK_VERSION 
+			&device,						// OUT: the ID3D11Device object. 
+			&feature_level,					// OUT: the selected feature level. 
+			&context						// OUT: the ID3D11DeviceContext that represents the above features. 
+		);
 		if (SUCCEEDED(hr)) {
 			printf("Device creation successful.\n");
 			break;
 		}
-	} 
-
-	if (hr == E_INVALIDARG) {                   // in Case D3D11_1 does not work (Error: invalid_arguments passed), take D3D11 and standard notation/parameters
-		hr = D3D11CreateDevice(
-			   nullptr,                         // outputAdapter
-			   D3D_DRIVER_TYPE_HARDWARE, 
-			   nullptr,
-			   0,
-			   &gFeatureLevels[1],
-			   gNumFeatureLevels - 1,
-			   D3D11_SDK_VERSION,
-			   &device,                         // TODO: enter specific graphic device, adapter and monitor in this section
-			   &feature_level,
-			   &context
-			);
-		if(SUCCEEDED(hr))
-			printf("Device creation succesful (feature level: D3D11).\n");
-	} 
-	if (FAILED(hr) || device == nullptr) {
-			terminal_fill("Error: failed to create a D3D11 Device and Context.\n", 12); 
-			context.Release();
-			return -1;
 	}
 
-	Sleep(50); 
+	if (hr == E_INVALIDARG) {                // in Case D3D11_1 does not work (Error: invalid_arguments passed), take D3D11 and standard notation/parameters
+		hr = D3D11CreateDevice(
+			nullptr,                         // outputAdapter
+			D3D_DRIVER_TYPE_HARDWARE,
+			nullptr,
+			0,
+			&gFeatureLevels[1],
+			gNumFeatureLevels - 1,
+			D3D11_SDK_VERSION,
+			&device,                         // TODO: enter specific graphic device, adapter and monitor in this section
+			&feature_level,
+			&context
+		);
+		if (SUCCEEDED(hr))
+			printf("Device creation succesful (feature level: D3D11).\n");
+	}
+	if (FAILED(hr) || device == nullptr) {
+		terminal_fill("Error: failed to create a D3D11 Device and Context.\n", 12);
+		context.Release();
+		return -1;
+	}
 
 	/**
 	 * Create a IDXGIOutputDuplication
@@ -316,7 +317,7 @@ int create_and_get_device(int &chosen_monitor) {
 	hr = output1->DuplicateOutput(device, &desktop_duplication);
 	if (FAILED(hr)) {
 		terminal_fill("Error: Desktop duplication failed.\n", 12);
-		return -4; 
+		return -4;
 	}
 	output1.Release();
 
@@ -349,8 +350,8 @@ int create_and_get_device(int &chosen_monitor) {
 
 //get next frame and transfer it to a global texture, that's accessible (<IDXGIResource> isn't!)
 /**
- * @brief if no next frame is available use the previous analyzed mean-color (disables smoothing) until next frame is available 
- * @return 'true' if frame got captured, oterwise 'false' 
+ * @brief if no next frame is available use the previous analyzed mean-color (disables smoothing) until next frame is available
+ * @return 'true' if frame got captured, oterwise 'false'
  */
 bool get_frame() {
 	bool new_frame = false;
@@ -371,21 +372,21 @@ bool get_frame() {
 	if (desktop_duplicate_desc.DesktopImageInSystemMemory == TRUE) {
 		std::cout << "Desktop image is in system memory and this is not want we want.\n  ..." << "\n";
 		return false;
-	} 
+	}
 	// outsource this check into another loop, before you call get_frame(); ? 
 	// Edit: after 15h hours of testing, this ^ if condition was not even once true
 #endif
 
 	//Release frame directly before acquiring next frame.
 	hr = desktop_duplication->ReleaseFrame();
-	
+
 	//accumulate some frames
 	if (((int)sleepTimerMs - 10) > 1)
-		Sleep(sleepTimerMs - 10); 
-		// this value is specific for my system 
-		// give it extra ms, maybe even more^^ 
+		Sleep(sleepTimerMs - 10);
+	// this value is specific for my system 
+	// just give it some extra ms
 
-	//get accumulated frames
+  //get accumulated frames
 	hr = desktop_duplication->AcquireNextFrame(5, &frame_info, &frame); // making use of win desktop duplication apis' core function
 	if (hr == DXGI_ERROR_INVALID_CALL) {
 		return false;
@@ -394,30 +395,31 @@ bool get_frame() {
 	} if (frame_info.AccumulatedFrames == 0) {
 		return false;
 	} if (FAILED(hr) && hr != DXGI_ERROR_WAIT_TIMEOUT) {
+		desktop_duplication->ReleaseFrame();
+		desktop_duplication.Release();
 		device.Release();
 		context.Release();
-		desktop_duplication.Release();
 		create_and_get_device(chosen_output_num);
 		return false;
 	} if (hr == S_OK) {
-		hr = frame->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&frame_texture_ori);		
+		hr = frame->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&frame_texture_ori);
 		if (FAILED(hr))
 			terminal_fill("QueryInterface of 'frame' to 'frame_texture_ori' failed.\n", 12);
 		if (frame_texture_ori == nullptr)
 			terminal_fill("Error: 'frame_texture_ori' is nullptr\n", 12);
-		new_frame = true; 
+		new_frame = true;
 		frame.Release();
-	} 
+	}
 
 	//making it CPU accessible
 	context->CopyResource(frame_texture, frame_texture_ori);
 
 	/**
-	 * video ram would also work, but a memcpy() to system mem would be necessary. runtime improvement: 0; 
-	 * best way to do: 
+	 * video ram would also work, but a memcpy() to system mem would be necessary. runtime improvement: 0;
+	 * best way to do:
 	 *  - capture in a 2dtexture in gpu ram, "/alternative params/"
-	 *  - obtain a shaderstructure, apply a mipmap-chain with custom filters, covering the conditions of reject_sub_pixel. 
-	 *  - memcpy() mipmaps to cpu access structure. obtain mean-value. 
+	 *  - obtain a shaderstructure, apply a mipmap-chain with custom filters, covering the conditions of reject_sub_pixel.
+	 *  - memcpy() mipmaps to cpu access structure. obtain mean-value.
 	 * but this way works just fine for ~60fps:
 	 */
 	hr = context->Map(frame_texture, 0, D3D11_MAP_READ_WRITE /*D3D11_MAP_WRITE_DISCARD*/, 0, &mapped_subresource);
@@ -449,7 +451,7 @@ bool get_frame() {
 
 	BYTE* sptr = reinterpret_cast<BYTE*>(mapped_subresource.pData);
 	BYTE* dptr = pBuf.get() + lBmpInfo.bmiHeader.biSizeImage - lBmpRowPitch;
-	
+
 	UINT lRowPitch = std::min<UINT>(lBmpRowPitch, mapped_subresource.RowPitch);
 
 	for (size_t h = 0; h < desktop_duplicate_desc.ModeDesc.Height; ++h) {
@@ -457,7 +459,7 @@ bool get_frame() {
 		sptr += mapped_subresource.RowPitch;
 		dptr -= lBmpRowPitch;
 	}
-	
+
 	// Save bitmap buffer into the file ScreenShot.bmp
 	WCHAR lMyDocPath[MAX_PATH];
 	hr = SHGetFolderPath(nullptr, CSIDL_PERSONAL, nullptr, SHGFP_TYPE_CURRENT, lMyDocPath);
@@ -495,39 +497,40 @@ bool get_frame() {
 
 /**
  * @brief test the brightness of the current pixel (after gamma correction)
- * @param curr_pixel 
+ * @param curr_pixel
  * @return true, if pixel is too dark or too white and needs to be ignored.
 */
-bool reject_sub_pixel(Pixel &curr_pixel) {
+bool reject_sub_pixel(Pixel& curr_pixel) {
 	if (min_brightness_per_pixel == 0 && min_saturation_per_pixel == 0)
 		return false;
 	else
-		return ( !( (curr_pixel.b >= min_brightness_per_pixel) || (curr_pixel.g >= min_brightness_per_pixel) || (curr_pixel.r >= min_brightness_per_pixel) ) || ( (abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel) && (abs(curr_pixel.b - curr_pixel.r) < min_saturation_per_pixel) ) );
+		return (!((curr_pixel.b >= min_brightness_per_pixel) || (curr_pixel.g >= min_brightness_per_pixel) || (curr_pixel.r >= min_brightness_per_pixel)) || ((abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel) && (abs(curr_pixel.b - curr_pixel.r) < min_saturation_per_pixel)));
+	//alternative: ((curr_pixel.b < 150) && (curr_pixel.g < 150) && (curr_pixel.r < 150)) || ( round(curr_pixel.b / 10.0) == round(curr_pixel.g / 10.0) == round(curr_pixel.r / 10.0) )
 }
 
 //true gamme correction:
 #if 0
 //TODO
-std::vector<std::vector<uint8_t>> setup_gamma(){
+std::vector<std::vector<uint8_t>> setup_gamma() {
 	std::vector<std::vector<uint8_t>> gamma(256, std::vector<uint8_t>(3, 0));
 	// Pre-compute gamma correction table for LED brightness levels:
-	for(int i = 0; i < 256; ++i) {
-	  float f = pow((float)i / 255.0, 2.8);
-	  gamma[i][0] = (uint8_t)(f * 255.0);
-	  gamma[i][1] = (uint8_t)(f * 240.0);
-	  gamma[i][2] = (uint8_t)(f * 220.0);
+	for (int i = 0; i < 256; ++i) {
+		float f = pow((float)i / 255.0, 2.8);
+		gamma[i][0] = (uint8_t)(f * 255.0);
+		gamma[i][1] = (uint8_t)(f * 240.0);
+		gamma[i][2] = (uint8_t)(f * 220.0);
 	}
-	return gamma; 
+	return gamma;
 }
 #endif
 
 /**
  * @brief retrieve pixel data and calculate the mean of the latest frame directly
- * @param mapped_subresource 
+ * @param mapped_subresource
  * @return new_pixel mean b,g,r,a values of the current frame
  */
-Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE &mapped_subresource) {
-	
+Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
+
 	const uint16_t height = texture_desc.Height;
 	const uint16_t width = texture_desc.Width;
 
@@ -547,8 +550,8 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE &mapped_subresource) {
 			curr_pixel.b = pixel_array_source[row_start + col * 4 + 0];             // first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
 			curr_pixel.g = pixel_array_source[row_start + col * 4 + 1];
 			curr_pixel.r = pixel_array_source[row_start + col * 4 + 2];
-			
-			if (reject_sub_pixel(curr_pixel)) 
+
+			if (reject_sub_pixel(curr_pixel))
 				continue;
 
 			accum_pixel.b += curr_pixel.b;
@@ -557,18 +560,18 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE &mapped_subresource) {
 
 			++pixel_amount;
 		}
-	} 
+	}
 
-	UINT8 zero = 0; 
+	UINT8 zero = 0;
 	if (pixel_amount == 0)															// avert division by zero 
 		mean_pixel = mean_color_old;												// ..mh nothing found, let's send old frame and fade once more..
 		//return mean_pixel = { 0, 0, 0 };											// send_data(): does nothing, if 'black'
 		//return mean_pixel = {10, 0, 30};											// Default lila for dark scenes
 
 	mean_pixel = {    //gamma adjustment
-		accum_pixel.b == zero ? zero : gamma8[((accum_pixel.b - (accum_pixel.b / 3)) / pixel_amount +1/*+ (accum_pixel.b % pixel_amount != zero)*/)],					//blue is a bit too intense with WS2812b ICs on 5050LEDs
-		accum_pixel.g == zero ? zero : gamma8[(accum_pixel.g / pixel_amount +1/*+ (accum_pixel.g % pixel_amount != zero)*/)],											//comment: integer ceiling
-		accum_pixel.r == zero ? zero : gamma8[(accum_pixel.r / pixel_amount +1/*+ (accum_pixel.r % pixel_amount != zero)*/)],
+		accum_pixel.b == zero ? zero : gamma8[((accum_pixel.b - (accum_pixel.b / 3)) / pixel_amount + 1/*+ (accum_pixel.b % pixel_amount != zero)*/)],					//blue is a bit too intense with WS2812b ICs on 5050LEDs
+		accum_pixel.g == zero ? zero : gamma8[(accum_pixel.g / pixel_amount + 1/*+ (accum_pixel.g % pixel_amount != zero)*/)],											//comment: integer ceiling
+		accum_pixel.r == zero ? zero : gamma8[(accum_pixel.r / pixel_amount + 1/*+ (accum_pixel.r % pixel_amount != zero)*/)],
 	};
 
 	return mean_pixel;
@@ -579,7 +582,7 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE &mapped_subresource) {
  * @param mean_pixel_new the new average color
  * @return mean_pixel_fade the faded color
  */
-Pixel fade(Pixel &mean_pixel) {
+Pixel fade(Pixel& mean_pixel) {
 	Pixel mean_pixel_faded = {
 		(mean_pixel.b * (256 - fade_val) + mean_color_old.b * fade_val) >> 8,
 		(mean_pixel.g * (256 - fade_val) + mean_color_old.g * fade_val) >> 8,
@@ -590,13 +593,19 @@ Pixel fade(Pixel &mean_pixel) {
 }
 
 /**
- * @brief connect the program with the micro controller 
+ * @brief connect the program with the micro controller
  * @return bool connected
  */
 bool connection_setup() {
 	terminal_fill("\nTrying to connect with the LED controller\n\t...\n");
-
-	for (int i = 0; i < 10; ++i) {
+ 
+	SP = new Serial(serial_port);		// try my own default USB-port first
+	if (SP->IsConnected()) {
+		terminal_fill("Connection established! Let in the light!\n");
+		return SP->IsConnected();
+	}
+	
+	for (int i = 0; i < 10; ++i) {		// now every other Port from 0 to 9
 		std::string s = "COM";
 		s.push_back((char)(i + 48));
 		const char* c = s.c_str();
@@ -610,24 +619,23 @@ bool connection_setup() {
 }
 
 /**
- * @brief send byte array to the micro controller. The first two bytes are the signature bytes. RGB gets attached. 
- * @param mean_color_new, the new color values to be sent. 
+ * @brief send byte array to the micro controller. The first two bytes are the signature bytes. RGB gets attached.
+ * @param mean_color_new, the new color values to be sent.
  * @return true, if send_data() worked or frame was 'black'.
- */ 
-bool send_data(Pixel &mean_color_new) {
+ */
+bool send_data(Pixel& mean_color_new) {
 	if (mean_color_new.r == 0 && mean_color_new.g == 0 && mean_color_new.b == 0)
 		return true;
-	uint8_t buffer[5] = {'m', 'o', (uint8_t)mean_color_new.r, (uint8_t)mean_color_new.g, (uint8_t)mean_color_new.b};
+	uint8_t buffer[5] = { 'm', 'o', (uint8_t)mean_color_new.r, (uint8_t)mean_color_new.g, (uint8_t)mean_color_new.b };
 	//Sleep(1);
 
 	return SP->WriteData(buffer, 5 /*sizeof(buffer)*/);
 }
 
-
 /**
- * @brief performance check of the system using different sleep timers. 
+ * @brief performance check of the system using different sleep timers.
  * @return true, if performance check got executed.
- */ 
+ */
 bool setup_and_benchmark() {
 	terminal_fill("\nBegin a performance check? ('y' / 'n'):\n\tHint: Start a high-fps video or stream before you type 'y'\n", 14);
 	std::cin.clear();
@@ -641,13 +649,13 @@ bool setup_and_benchmark() {
 		return true;
 	}
 	if (!connection_setup())
-		return false;	
+		return false;
 	Sleep(1000);
 	create_and_get_device(chosen_output_num);
 
 	terminal_fill("I will run a test for 50 seconds, now.\n", 14);
 	UINT user_fps = fps;
-	std::vector<uint32_t> fps_vec = {user_fps, 25, 30, 60, 0};
+	std::vector<uint32_t> fps_vec = { user_fps, 25, 30, 60, 0 };
 	for (size_t i = 0; i < fps_vec.size(); ++i) {
 		terminal_fill("\n--- Checking for max. " + std::to_string((int)fps_vec[i]) + "fps: ---\n", 14);
 
@@ -661,7 +669,7 @@ bool setup_and_benchmark() {
 			if (std::chrono::steady_clock::now() - start > std::chrono::seconds(10)) //runtime
 				break;
 			mean_color_old = mean_color_new;
-			if (get_frame()) { 	
+			if (get_frame()) {
 				mean_color_new = retrieve_pixel(mapped_subresource);
 
 				mean_color_new = fade(mean_color_new);
@@ -675,10 +683,15 @@ bool setup_and_benchmark() {
 			++get_frame_call;
 		}
 		terminal_fill("I looped exactly " + std::to_string(get_frame_call) + " times.\n", 14);
-		terminal_fill("I captured: ~" + std::to_string(mapped_frames_counter/10) + " fps.\n", 14);
+		terminal_fill("I captured: ~" + std::to_string(mapped_frames_counter / 10) + " fps.\n", 14);
+		/*
+		std::cout << "fail_invalid: " << fail_invalid << "\n";
+		std::cout << "fail_1: " << fail_1 << "\n";
+		std::cout << "fail_2: " << fail_2 << "\n";
+		*/
 	}
 	set_sleepTimerMs(user_fps); 		// reset
-	
+
 	return true;
 }
 
@@ -700,12 +713,12 @@ bool configuration() {
 		std::cin.clear();
 		std::cin >> sat;
 		min_saturation_per_pixel = sat;
-	
+
 		terminal_fill("Insert min. brightness level of the pixel for the analyzation (0 - 255)):\t\tDefault: 50\n", 11);
 		std::cin.clear();
 		std::cin >> bright;
 		min_brightness_per_pixel = bright;
-	
+
 		terminal_fill("Insert fading factor from one frame to another (0 - 255):\t\tDefault: 110\n", 11);
 		std::cin.clear();
 		std::cin >> fade_val;
@@ -716,7 +729,7 @@ bool configuration() {
 		std::cout << "\tFading factor: " << fade_val << "\n";
 		std::cout << "\tMax. fps: " << fps << "\n";
 	}
-	return true; 
+	return true;
 }
 
 //#############################################################################################
@@ -727,7 +740,7 @@ int main() {
 	SetConsoleTitle(title);
 	terminal_fill("--- MaxLight v1.0 --- Max 2021 ---\n\n\n");
 
-	chosen_output_num = check_monitor_devices(); 
+	chosen_output_num = check_monitor_devices();
 	if (chosen_output_num < 0 || chosen_output_num >= outputs.size()) {
 		terminal_fill("\nError (main1): Something went terribly wrong. --> Exit\n", 12);
 		return -1;
@@ -739,23 +752,22 @@ int main() {
 		return -2;
 
 	terminal_fill("\n--- Starting continues analyzation ---\n\n");
-	
+
 	while (true) {
 		mean_color_old = mean_color_new;				// used in 'fade()'
-		if (get_frame()) { 								// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
-			mean_color_new = retrieve_pixel(mapped_subresource);
-			mean_color_new = fade(mean_color_new);
-			if (!send_data(mean_color_new)) {			// send data to micro controller
-				terminal_fill("Error: Sending data to the micro controller failed!\n\tTrying to reconnect...\n", 12);
-				Sleep(5000);
-				connection_setup();
-				Sleep(5000);
-			}
+		if (!get_frame()) 								// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
+			continue;
+		mean_color_new = retrieve_pixel(mapped_subresource);
+		mean_color_new = fade(mean_color_new);
+		if (!send_data(mean_color_new)) {			// send data to micro controller
+			terminal_fill("Error: Sending data to the micro controller failed!\n\tTrying to reconnect...\n", 12);
+			Sleep(5000);
+			connection_setup();
+			Sleep(5000);
 		}
 		//prints:
-		if (mapped_frames_counter % (fps+1) == 0)
+		if (mapped_frames_counter % (fps + 1) == 0)
 			std::cout << "new_avg_pixel: " << mean_color_new.r << "r, " << mean_color_new.g << "g, " << mean_color_new.b << "b   \r";
-	
 	}
 
 	std::cin.clear();
@@ -763,6 +775,6 @@ int main() {
 	std::cin.ignore();
 
 	//oupsie:
-	//TODO: proper Clean-Up !
+	//TODO: Clean Up !
 	return 0;
 }

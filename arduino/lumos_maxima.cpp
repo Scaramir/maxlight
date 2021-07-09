@@ -32,6 +32,8 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 const int buffer_size = 5;
 uint8_t buffer[buffer_size];         //+2, 'cause "mo" is the header
+uint8_t buffer_old[buffer_size];
+uint8_t buffer_tmp[buffer_size];
 int index = 0;
 int min_bright = 0;
 int parts = 7;
@@ -69,15 +71,48 @@ void setup() {
     strip.show();
 }
 
-
 // loop() function -- runs repeatedly as long as board is on ---------------
 void loop() {
 
+  if (Serial.available() > 0) {
+    buffer[index++] = Serial.read();
+    if (index >= buffer_size) {
+      index = 0;
+      if (buffer[0] == 'm' && buffer[1] == 'o') {
+        #if 0
+        min_bright = buffer[2]+buffer[3]+buffer[4] - 120;
+        if (min_bright <= 1) {
+          if ( buffer[2] < 40 && buffer[3] < 40 && buffer[4] < 40) 
+            strip.fill(strip.Color(buffer[2] << 1, buffer[3] << 1, buffer[4] << 1), 0, LED_COUNT/*i * LED_COUNT/parts, LED_COUNT/parts*/);
+          else
+            strip.fill(strip.Color(buffer[2] + (buffer[2]>>1), buffer[3] + (buffer[3]>>1), buffer[4] + (buffer[4]>>1)), 0, LED_COUNT/*i * LED_COUNT/parts, LED_COUNT/parts*/);
+        } else {
+          strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
+        }
+        #endif
+        
+        strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
+        strip.show();
+      }
+    }
+  }
+
+}
+
+#if 0
+//work in progress!
+//this doesn't work, bu it would be nice to let the arduino do the fading and have a continues fade...
+// loop() function -- runs repeatedly as long as board is on ---------------
+void loop() {
+
+	for (uint8_t i = 0; i < buffer_size; ++i)
+		buffer_old[i] = buffer[i];
+
 	if (Serial.available() > 0) {
-	    buffer[index++] = Serial.read();
+	    buffer_tmp[index++] = Serial.read();
 	    if (index >= buffer_size) {
-	      index = 0;
-	        if (buffer[0] == 'm' && buffer[1] == 'o') {
+	        index = 0;
+	        if (buffer_tmp[0] == 'm' && buffer_tmp[1] == 'o') {
 				#if 0
 				min_bright = buffer[2]+buffer[3]+buffer[4] - 150;
 				if (min_bright <= 1) {
@@ -86,13 +121,24 @@ void loop() {
 					else
 					strip.fill(strip.Color(buffer[2] + (buffer[2]>>1), buffer[3] + (buffer[3]>>1), buffer[4] + (buffer[4]>>1)), 0, LED_COUNT/*i * LED_COUNT/parts, LED_COUNT/parts*/);
 				} else {
-				strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
+					strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
 				}
 				#endif
 
-				strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
-				strip.show();
+				for (uint8_t i = 0; i < buffer_size; ++i)
+					buffer[i] = buffer_tmp[i];
+
+				//strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
+				//strip.show();
 	        }
 	    }
 	}
-}  
+
+	for (uint8_t i = 2; i < buffer_size; ++i)
+		buffer[i] = buffer[i] * (146) + buffer_old[i] * 110 >> 8;
+
+	strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
+	strip.show();
+	delay(2);
+}
+#endif
