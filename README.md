@@ -24,13 +24,30 @@ Just play around.
 Btw.: Netflix' desktop app and some other apps and sites with DRM-protection will block the win desktop duplication api from grabbing the frames. 
 Workaround: use Firefox or something else... 
 ```
+
+## TODO:
+- It's a console application and i want to turn it into a nice UI after my ML-internship.
+- Multi-threaded matrix iteration
+- better USB-connection
+- Reinitialize enumerator and devices after failure
+- Assign areas to distinguished LEDs or LED-stripes 
+-     upgrade iteration, 
+-     re-write buffer-send, 
+-     Arduino-script to distibute buffer-values to LEDs/stripes
+-     lower gpu-usage as well (don't send unnecessary large copies through BUS)
+-     create a UI
+- Gamma-correction value shift and matched gamma-values for glasses with blue-filters and display night modes
+- (Think about image compression)
+
+
+
 ## Appendix:
 The project got compiled by Visual Studios' "Release Mode"  with winSDK and only works on Windows 8.1 and higher and x64. \
 More features will come soon. \
 'lumos_maxima.cpp' is the Arduino code. 
 
 
-Known bugs: \
+## Known issues: \
 Rotated monitors won't get captured. I will re-read how windows passes rotated frames and pass the rotation-mode to the functions. 
 Switching from or to a fullscreen mode programm causes an access loss of the variables or stucks in an api-function. Restart the Program and switch/'Alt+Tab' back to the game within 5 seconds. This accounts to every display-mode switch (change of resolution, lockscreen, changing games from window mode to fullscreen, ...).
 
