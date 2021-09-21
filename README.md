@@ -25,19 +25,24 @@ Btw.: Netflix' desktop app and some other apps and sites with DRM-protection wil
 Workaround: use Firefox or something else... 
 ```
 
-## TODO:
-- It's a console application and i want to turn it into a nice UI after my ML-internship.
-- Multi-threaded matrix iteration
-- better USB-connection
-- Reinitialize enumerator and devices after failure
-- Assign areas to distinguished LEDs or LED-stripes 
--     upgrade iteration, 
--     re-write buffer-send, 
--     Arduino-script to distibute buffer-values to LEDs/stripes
--     lower gpu-usage as well (don't send unnecessary large copies through BUS)
--     create a UI
-- Gamma-correction value shift and matched gamma-values for glasses with blue-filters and display night modes
-- (Think about image compression)
+## TODOs:
+- [ ] It's a console application and i want to turn it into a nice UI after my ML-internship.
+- [ ] Multi-threaded matrix iteration
+- [ ] better USB-connection, e.g. detect disconnection
+- [ ] Reinitialize enumerator and devices after failure
+- [ ] Have a stop/interrupt call to switch to modes or config
+- [ ] Implement modes 
+    - [ ] static light
+    - [ ] standard light effects
+    - [ ] overall darken and brighten 
+- [ ] Assign areas to distinguished LEDs or LED-stripes 
+    - [ ] upgrade iteration 
+    - [ ] re-write buffer-send
+    - [ ] Arduino-script to distibute buffer-values to LEDs/stripes
+    - [ ] lower gpu-usage as well (don't send unnecessary large copies through BUS)
+    - [ ] create a UI
+- [ ] Gamma-correction value shift and matched gamma-values for glasses with blue-filters and display night modes
+- [x] (Think about image compression)
 
 
 
