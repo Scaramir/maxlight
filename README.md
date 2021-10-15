@@ -26,7 +26,8 @@ Workaround: use Firefox or something else...
 ```
 
 ## TODOs:
-- [ ] Turn the onsole application into a nice UI after the bachelor's thesis.
+- [x] Check the fading function for flaws 
+    - [ ] Apply the gamma correction only while sending, not in retrieve_pixel(). 
 - [ ] Multi-threaded matrix iteration (2)
 - [ ] better USB-connection, e.g. detect disconnection and wait until ready before buffer gets send
 - [ ] Reinitialize enumerator and devices after device failure
@@ -43,6 +44,7 @@ Workaround: use Firefox or something else...
 - [ ] Gamma-correction value shift and matched gamma-values for glasses with blue-filters and display night modes
 - [x] (Think about image compression)
 - [ ] lower gpu-usage: don't send unnecessary large copies multiple times through BUS per frame
+- [ ] Turn the onsole application into a nice UI after the bachelor's thesis.
     
 
 

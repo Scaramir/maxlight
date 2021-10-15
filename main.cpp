@@ -99,8 +99,8 @@ namespace screen_capture {
 					10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,
 					17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,
 					25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,
-					37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 50,
-					51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,
+					37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,
+					52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,
 					69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,
 					90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,
 					115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,
@@ -125,7 +125,7 @@ void terminal_fill(std::string s, int c = 10) {
 
 	for (char& c : s) {
 		std::cout << c;
-		Sleep(15);
+		Sleep(10);
 	}
 
 	return;
@@ -514,8 +514,8 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
 		//return mean_pixel = {10, 0, 30};											// Default lila for dark scenes
 
 	mean_pixel = {    //gamma adjustment
-		accum_pixel.b == zero ? zero : gamma8[((accum_pixel.b - (accum_pixel.b / 3)) / pixel_amount + 1/*+ (accum_pixel.b % pixel_amount != zero)*/)],					//blue is a bit too intense with WS2812b ICs on 5050LEDs
-		accum_pixel.g == zero ? zero : gamma8[(accum_pixel.g / pixel_amount + 1/*+ (accum_pixel.g % pixel_amount != zero)*/)],											//comment: integer ceiling
+		accum_pixel.b == zero ? zero : gamma8[((accum_pixel.b - (accum_pixel.b / 3)) / pixel_amount + 1/*+ (accum_pixel.b % pixel_amount != zero)*/)],		// blue is a bit too intense with WS2812b ICs on 5050LEDs
+		accum_pixel.g == zero ? zero : gamma8[(accum_pixel.g / pixel_amount + 1/*+ (accum_pixel.g % pixel_amount != zero)*/)],								// comment: integer ceiling
 		accum_pixel.r == zero ? zero : gamma8[(accum_pixel.r / pixel_amount + 1/*+ (accum_pixel.r % pixel_amount != zero)*/)],
 	};
 
@@ -590,7 +590,7 @@ bool setup_and_benchmark() {
 		if (!connection_setup())
 			return false;
 		Sleep(4500);
-		create_and_get_device(chosen_output_num);		 	//not finished... how do i pass a specific device+monitor to CreateDevice()?
+		create_and_get_device(chosen_output_num);		 	// not finished... how do i pass a specific device+monitor to CreateDevice()?
 		return true;
 	}
 	if (!connection_setup())
@@ -611,7 +611,7 @@ bool setup_and_benchmark() {
 
 		auto start = std::chrono::steady_clock::now();
 		while (true) {
-			if (std::chrono::steady_clock::now() - start > std::chrono::seconds(10)) //runtime
+			if (std::chrono::steady_clock::now() - start > std::chrono::seconds(10)) // runtime
 				break;
 			mean_color_old = mean_color_new;
 			if (get_frame()) {
@@ -704,13 +704,13 @@ int main() {
 			continue;
 		mean_color_new = retrieve_pixel(mapped_subresource);
 		mean_color_new = fade(mean_color_new);
-		if (!send_data(mean_color_new)) {			// send data to micro controller
+		if (!send_data(mean_color_new)) {				// send data to micro controller
 			terminal_fill("Error: Sending data to the micro controller failed!\n\tTrying to reconnect...\n", 12);
 			Sleep(5000);
 			connection_setup();
 			Sleep(5000);
 		}
-		//prints:
+		// prints:
 		if (mapped_frames_counter % (fps + 1) == 0)
 			std::cout << "new_avg_pixel: " << mean_color_new.r << "r, " << mean_color_new.g << "g, " << mean_color_new.b << "b   \r";
 	}
@@ -719,7 +719,7 @@ int main() {
 	std::cout << "Press 'Enter' to end! \n";
 	std::cin.ignore();
 
-	//oupsie:
-	//TODO: Clean Up !
+	// oupsie:
+	// TODO: Clean Up !
 	return 0;
 }
