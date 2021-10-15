@@ -12,7 +12,7 @@
 
 #include <iostream>
 #include <sstream> 
-#include <dxgi1_2.h>        //include-order
+#include <dxgi1_2.h>        // include-order
 #include <d3d11.h>
 #include <memory>
 #include <algorithm>
@@ -26,7 +26,7 @@
 #include "include/ccomptrcustom_class.hpp"
 #include "include/SerialClass.h"
 
-#pragma comment(lib, "dxgi") //this is for CreateDXGIFactory1()
+#pragma comment(lib, "dxgi") // this is for CreateDXGIFactory1()
 #pragma comment(lib, "d3d11")
 
 
@@ -48,44 +48,44 @@ D3D_FEATURE_LEVEL gFeatureLevels[] = {
 UINT gNumFeatureLevels = ARRAYSIZE(gFeatureLevels);
 
 //#############################################################################################
-///Declaration of global variables:
+// Declaration of global variables:
 namespace screen_capture {
-	//main:
+	// main:
 	UINT sleepTimerMs = (int)(((float)1 / 33) * 1000);
 	UINT fps = 35;
 	void set_sleepTimerMs(unsigned int& fps) { if (fps == 0) sleepTimerMs = 0; else sleepTimerMs = ((int)(((float)1 / fps) * 1000) - 1); }
 	HRESULT hr = E_FAIL;
-	//output_enumeration() + check_monitor_devices()
+	// output_enumeration() + check_monitor_devices()
 	std::vector<IDXGIAdapter1*> adapters;							// Needs to be Released()
 	static int chosen_adapter_num = 0;								// default adpater 
 	IDXGIAdapter1* chosen_adapter = nullptr;
 	std::vector<IDXGIOutput*> outputs;
 	static int chosen_output_num = 0;
-	//check_cpu_access()
+	// check_cpu_access()
 	D3D11_TEXTURE2D_DESC texture_desc;
-	//create_and_get_device()
+	// create_and_get_device()
 	CComPtrCustom<ID3D11Device> device = nullptr;
 	CComPtrCustom<ID3D11DeviceContext> context = nullptr;
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
-	//reject_sub_pixel()
+	// reject_sub_pixel()
 	UINT8 min_saturation_per_pixel = 18;							// optional accents: 60;
 	UINT8 min_brightness_per_pixel = 50;							//                  160;
-//get_frame()
+// get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	D3D11_MAPPED_SUBRESOURCE mapped_subresource;
-//benchmark
+// benchmark
 	int mapped_frames_counter = 0;
-//arduino connection 
+// arduino connection 
 	const char serial_port[] = { 'C', 'O', 'M', '7' };			    // usb port name 
 	Serial* SP;
-//led_stuff:
+// led_stuff:
 	struct Pixel {
 	public:
 		int b = 0;	                   								// initialized to 'black'; 
 		int g = 0;
 		int r = 0;
 	};
-//fade:
+// fade:
 	int fade_val = 110;												// default value
 	Pixel mean_color_old;
 	Pixel mean_color_new;
@@ -131,7 +131,7 @@ void terminal_fill(std::string s, int c = 10) {
 	return;
 }
 
-//Check Devices for outputs
+// Check Devices for outputs
 /**
  * @brief check monitors (outputs) for a graphic adpater and push it into vec<output>
  * @param i index of adapter
@@ -145,11 +145,11 @@ int output_enumeration(INT16& i) {
 		int monitor_num = outputs.size();	// current monitor index
 		std::cout << "\t  (" << monitor_num << ".) ";
 		printf("Found monitor %d on adapter: %lu \n", monitor_num, i);
-		outputs.push_back(output);	//store the found monitor
+		outputs.push_back(output);	// store the found monitor
 
-		DXGI_OUTPUT_DESC desc;		//get description of the monitor
+		DXGI_OUTPUT_DESC desc;		// get description of the monitor
 		HRESULT hr = outputs[monitor_num]->GetDesc(&desc);
-		if (SUCCEEDED(hr)) {		//print info
+		if (SUCCEEDED(hr)) {		// print info
 			wprintf(L"\t\tMonitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'Y' : 'n');
 			std::cout << "\t\twith the following dimensions:\n\t\t " <<
 			   abs(abs((int)desc.DesktopCoordinates.right) - abs((int)desc.DesktopCoordinates.left)) <<
@@ -165,7 +165,7 @@ int output_enumeration(INT16& i) {
 	return dx;
 }
 
-//Check for devices/adapters, monitors, and choose one
+// Check for devices/adapters, monitors, and choose one
 /**
  * @brief check for adapters and devices; choose one
  * @return chosen_output_num
@@ -173,15 +173,15 @@ int output_enumeration(INT16& i) {
 int check_monitor_devices() {
 	HRESULT hr = E_FAIL;
 
-	//Create device that's able to enumerate adapters
+	// Create device that's able to enumerate adapters
 	IDXGIFactory1* factory = nullptr;
 	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&factory)); // winSDK and x64 needed for compilation
-	if (FAILED(hr)) { //(hr != 0 || hr != S_OK)
+	if (FAILED(hr)) {
 		terminal_fill("Error: failed to retrieve the IDXGIFactory.\n", 12);
 		return -1;
 	}
 
-	//Enumerate the adapters aka GPUs
+	// Enumerate the adapters aka GPUs
 	IDXGIAdapter1* adapter = nullptr;
 	INT16 i = 0;
 	while (DXGI_ERROR_NOT_FOUND != factory->EnumAdapters1(i, &adapter)) {
@@ -193,7 +193,7 @@ int check_monitor_devices() {
 		return -1;
 	}
 
-	//Print list of adapters and push corresponding outputs
+	// Print list of adapters and push corresponding outputs
 	terminal_fill("Following graphics adapters (GPUs) are found:\n");
 	for (INT16 i = 0; i < adapters.size(); ++i) {
 		DXGI_ADAPTER_DESC1 desc;
@@ -209,11 +209,11 @@ int check_monitor_devices() {
 		}
 	}
 
-	//select monitor and adapter for analyzation
+	// select monitor and adapter for analyzation
 	terminal_fill("\nWhich monitor do you choose?\n\tType the number (x.) of the monitor.\n", 13);
 	std::cin.clear(); //yaya, use scanl, getline, anything but cin 
 	std::cin >> chosen_output_num;
-	///fix device creation for this:
+	// fix device creation for this:
 	//std::cout << "Which graphics adapter do you choose?\n\tType the number of adapter." << "\n";
 	std::cin.clear();
 	//std::cin >> chosen_adapter_num;
@@ -224,12 +224,12 @@ int check_monitor_devices() {
 /**
  * @brief creates a cpu access texture (D3D11Texture2D); this way, the texture can get copied and mapped.
  * this can be stored in system memory or as a shader-texture
- * @return int != 0 if texture is not accessible
+ * @return false, if texture is not accessible
  */
-int check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D>& frame_texture) {
+bool check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D>& frame_texture) {
 	//create a texture with cpu_access_read
 	if (frame_texture != nullptr)
-		return 0;
+		return false;
 	else
 		printf("Creating new 2DTexture\n");
 
@@ -240,14 +240,14 @@ int check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D>& frame_texture) {
 	};
 
 	HRESULT hr = device->CreateTexture2D(&texture_desc, &sub_data, &frame_texture);
-	if (S_OK != hr) {
+	if (FAILED(hr)) {
 		terminal_fill("Error: Failed to create the 2DTexture.\n", 12);
-		return -5;
+		return false;
 	}
-	else
-		printf("'CreateTexture2D()' was successful!\n");
+	//else
+	//	printf("'CreateTexture2D()' was successful!\n");
 
-	return 0;
+	return true;
 }
 
 //create D3DX-Device and query interfaces 
@@ -347,9 +347,11 @@ int create_and_get_device(int& chosen_monitor) {
 	texture_desc.MiscFlags = 0;
 	std::cout << "Capturing a " << texture_desc.Width << " x " << texture_desc.Height << " monitor.\n";
 
-	if (check_cpu_access_texture(frame_texture) != 0)														 // this was originally in 'get_frame()'; gonna call it here once for structure access testing purposes
+	if (!check_cpu_access_texture(frame_texture)) {		
+		terminal_fill("The used texture is not accessabil by the cpu. ", 12);
 		return -100;
-
+	}
+	
 	terminal_fill("\n--- Setup completed ---\n");
 
 	return 0;
@@ -366,12 +368,7 @@ bool get_frame() {
 	CComPtrCustom<ID3D11Texture2D> frame_texture_ori = nullptr;
 	DXGI_OUTDUPL_FRAME_INFO frame_info;
 
-#if 0
-	if (check_cpu_access_texture(frame_texture) != 0)
-		return false;
-#endif
-
-#if 0
+	#if 0
 	// We want to have the memory in the GPU. Otherwise, we'd drop the memory and end the program
 	// checking this v description every call is a maybe bit too much
 	DXGI_OUTDUPL_DESC desktop_duplicate_desc;
@@ -382,30 +379,30 @@ bool get_frame() {
 	}
 	// outsource this check into another loop, before you call get_frame(); ? 
 	// Edit: after 15h hours of testing, this ^ if condition was not even once true
-#endif
+	#endif
 
-	//Release frame directly before acquiring next frame.
+	// Release frame directly before acquiring next frame.
 	hr = desktop_duplication->ReleaseFrame();
 
-	//accumulate some frames
+	// let some frames get accumulated 
 	if (((int)sleepTimerMs - 10) > 1)
 		Sleep(sleepTimerMs - 10);
 	// this value is specific for my system 
 	// just give it some extra ms
 
-  //get accumulated frames
-	hr = desktop_duplication->AcquireNextFrame(5, &frame_info, &frame); // making use of win desktop duplication apis' core function
+    //get accumulated frames
+	hr = desktop_duplication->AcquireNextFrame(5, &frame_info, &frame); // win desktop duplication apis' core function
 	if (hr == DXGI_ERROR_INVALID_CALL) {
 		return false;
 	} if (hr == E_INVALIDARG) {
 		return false;
 	} if (frame_info.AccumulatedFrames == 0) {
 		return false;
-	} if (FAILED(hr) && hr != DXGI_ERROR_WAIT_TIMEOUT) {
+	} if (FAILED(hr) && hr != DXGI_ERROR_WAIT_TIMEOUT) {				// ^= (hr == DXGI_ERROR_ACCESS_LOST)
 		desktop_duplication->ReleaseFrame();
 		desktop_duplication.Release();
-		device.Release();
-		context.Release();
+		//device.Release();
+		//context.Release();
 		create_and_get_device(chosen_output_num);
 		return false;
 	} if (hr == S_OK) {
@@ -422,19 +419,18 @@ bool get_frame() {
 	context->CopyResource(frame_texture, frame_texture_ori);
 
 	/**
-	 * video ram would also work, but a memcpy() to system mem would be necessary. runtime improvement: 0;
-	 * best way to do:
-	 *  - capture in a 2dtexture in gpu ram, "/alternative params/"
-	 *  - obtain a shaderstructure, apply a mipmap-chain with custom filters, covering the conditions of reject_sub_pixel.
-	 *  - memcpy() mipmaps to cpu access structure. obtain mean-value.
-	 * but this way works just fine for ~60fps:
+	 * best way to do it would be:
+	 *  - capture in a 2DTexture in gpu ram, "/alternative params/"
+	 *  - obtain a shaderstructure, apply a mipmap-chain with (custom) filters (covering the conditions of reject_sub_pixel()).
+	 *  - memcpy() mipmaps to cpu access structure.
+	 * but this way works just fine for ~75fps:
 	 */
 	hr = context->Map(frame_texture, 0, D3D11_MAP_READ_WRITE /*D3D11_MAP_WRITE_DISCARD*/, 0, &mapped_subresource);
 	if (S_OK != hr) {
 		terminal_fill("Error: Failed to map the pointer of 'frame_texture' to 'mapped_subresource'.\n", 12);
 		return false;
 	} if (SUCCEEDED(hr))
-		++mapped_frames_counter;  //benchmark
+		++mapped_frames_counter;  // benchmark
 	context->Unmap(frame_texture, 0);
 
 	return new_frame;
@@ -449,21 +445,20 @@ bool reject_sub_pixel(Pixel& curr_pixel) {
 	if (min_brightness_per_pixel == 0 && min_saturation_per_pixel == 0)
 		return false;
 	else
-		return (!((curr_pixel.b >= min_brightness_per_pixel) || (curr_pixel.g >= min_brightness_per_pixel) || (curr_pixel.r >= min_brightness_per_pixel)) || ((abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel) && (abs(curr_pixel.b - curr_pixel.r) < min_saturation_per_pixel)));
-	//alternative: ((curr_pixel.b < 150) && (curr_pixel.g < 150) && (curr_pixel.r < 150)) || ( round(curr_pixel.b / 10.0) == round(curr_pixel.g / 10.0) == round(curr_pixel.r / 10.0) )
+		return (!((curr_pixel.b > min_brightness_per_pixel) || (curr_pixel.g > min_brightness_per_pixel) || (curr_pixel.r > min_brightness_per_pixel)) || ((abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel) && (abs(curr_pixel.b - curr_pixel.r) < min_saturation_per_pixel)));
 }
 
-//true gamme correction:
+// true gamme correction:
 #if 0
-//TODO
+// TODO
 std::vector<std::vector<uint8_t>> setup_gamma() {
 	std::vector<std::vector<uint8_t>> gamma(256, std::vector<uint8_t>(3, 0));
 	// Pre-compute gamma correction table for LED brightness levels:
 	for (int i = 0; i < 256; ++i) {
-		float f = pow((float)i / 255.0, 2.8);
-		gamma[i][0] = (uint8_t)(f * 255.0);
-		gamma[i][1] = (uint8_t)(f * 240.0);
-		gamma[i][2] = (uint8_t)(f * 220.0);
+		float f = pow((float)i / 255., 2.8);
+		gamma[i][0] = (uint8_t)(f * 255.);
+		gamma[i][1] = (uint8_t)(f * 240.);
+		gamma[i][2] = (uint8_t)(f * 220.);
 	}
 	return gamma;
 }
@@ -479,7 +474,7 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
 	const uint16_t height = texture_desc.Height;
 	const uint16_t width = texture_desc.Width;
 
-	//point to bytes/values of pixel data 
+	// point to bytes/values of pixel data 
 	uint8_t* pixel_array_source = static_cast<uint8_t*>(mapped_subresource.pData);
 
 	Pixel curr_pixel;
