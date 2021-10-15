@@ -1,7 +1,7 @@
 //Standard serial communication:
 //https://playground.arduino.cc/Interfacing/CPPWindows/
 
-#include "SerialClass.h"
+#include "../include/SerialClass.h"
 
 Serial::Serial(const char* portName)
 {

@@ -5,6 +5,7 @@
  * https://www.codeproject.com/Tips/1116253/Desktop-screen-capture-on-Windows-via-Windows-Desk   
  * CComPtr are generally used to handle smart-pointers
  * this custom class is not essentially necessary. alternative: use default smart pointer 
+ * but the release is kinda nice
  */
 template <typename T>
 class CComPtrCustom

@@ -1,10 +1,17 @@
 /**
- * "MaxLight" got created by Maximilian Otto ©, March 2021, Berlin
+ * @file main.cpp
+ * @author Maximilian Otto (maxotto45@gmail.com)
+ * @brief This is used to control an arduino with an LED strip attached to it. www.github.com/Scaramir/maxlight
+ * @version 1.0
+ * @date 2021-10-15
+ * 
+ * @copyright Copyright (c) 2021
+ * 
  */
+
 
 #include <iostream>
 #include <sstream> 
- //#include <DXGI.h>
 #include <dxgi1_2.h>        //include-order
 #include <d3d11.h>
 #include <memory>
@@ -16,8 +23,8 @@
 #include <shlobj.h>
 #include <shellapi.h>
 
-#include "ccomptrcustom_class.hpp"
-#include "SerialClass.h"
+#include "include/ccomptrcustom_class.hpp"
+#include "include/SerialClass.h"
 
 #pragma comment(lib, "dxgi") //this is for CreateDXGIFactory1()
 #pragma comment(lib, "d3d11")
@@ -430,68 +437,6 @@ bool get_frame() {
 		++mapped_frames_counter;  //benchmark
 	context->Unmap(frame_texture, 0);
 
-#if 0  //#####################################################################################
-	//save resource to file to see, if the screen got REALLY captured
-	//SO.: code-project.org
-	BITMAPINFO lBmpInfo;
-
-	// BMP 32 bpp
-	ZeroMemory(&lBmpInfo, sizeof(BITMAPINFO));
-	lBmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	lBmpInfo.bmiHeader.biBitCount = 32;
-	lBmpInfo.bmiHeader.biCompression = BI_RGB;
-	lBmpInfo.bmiHeader.biWidth = desktop_duplicate_desc.ModeDesc.Width;
-	lBmpInfo.bmiHeader.biHeight = desktop_duplicate_desc.ModeDesc.Height;
-	lBmpInfo.bmiHeader.biPlanes = 1;
-	lBmpInfo.bmiHeader.biSizeImage = desktop_duplicate_desc.ModeDesc.Width
-		* desktop_duplicate_desc.ModeDesc.Height * 4;
-
-	std::unique_ptr<BYTE> pBuf(new BYTE[lBmpInfo.bmiHeader.biSizeImage]);
-	UINT lBmpRowPitch = desktop_duplicate_desc.ModeDesc.Width * 4;
-
-	BYTE* sptr = reinterpret_cast<BYTE*>(mapped_subresource.pData);
-	BYTE* dptr = pBuf.get() + lBmpInfo.bmiHeader.biSizeImage - lBmpRowPitch;
-
-	UINT lRowPitch = std::min<UINT>(lBmpRowPitch, mapped_subresource.RowPitch);
-
-	for (size_t h = 0; h < desktop_duplicate_desc.ModeDesc.Height; ++h) {
-		memcpy_s(dptr, lBmpRowPitch, sptr, lRowPitch);
-		sptr += mapped_subresource.RowPitch;
-		dptr -= lBmpRowPitch;
-	}
-
-	// Save bitmap buffer into the file ScreenShot.bmp
-	WCHAR lMyDocPath[MAX_PATH];
-	hr = SHGetFolderPath(nullptr, CSIDL_PERSONAL, nullptr, SHGFP_TYPE_CURRENT, lMyDocPath);
-	if (FAILED(hr))
-		std::cout << "Fail bitmap 1\n";
-
-	std::wstring lFilePath = std::wstring(lMyDocPath) + L"\\ScreenShot.bmp";
-
-	FILE* lfile = nullptr;
-
-	auto lerr = _wfopen_s(&lfile, lFilePath.c_str(), L"wb");
-	if (lerr != 0)
-		std::cout << "Fail bitmap 2\n";
-
-	if (lfile != nullptr) {
-
-		BITMAPFILEHEADER	bmpFileHeader;
-		bmpFileHeader.bfReserved1 = 0;
-		bmpFileHeader.bfReserved2 = 0;
-		bmpFileHeader.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + lBmpInfo.bmiHeader.biSizeImage;
-		bmpFileHeader.bfType = 'MB';
-		bmpFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-
-		fwrite(&bmpFileHeader, sizeof(BITMAPFILEHEADER), 1, lfile);
-		fwrite(&lBmpInfo.bmiHeader, sizeof(BITMAPINFOHEADER), 1, lfile);
-		fwrite(pBuf.get(), lBmpInfo.bmiHeader.biSizeImage, 1, lfile);
-
-		fclose(lfile);
-		ShellExecute(0, 0, lFilePath.c_str(), 0, 0, SW_SHOW);
-	}
-#endif //#####################################################################################
-
 	return new_frame;
 }
 
@@ -736,7 +681,7 @@ bool configuration() {
 //##################################### M A I N ###############################################
 //###################################### v1.0 #################################################
 int main() {
-	LPCWSTR title = L"MaxLight";
+	LPCSTR title = "MaxLight";		//LPCWSTR title = L"MaxLight";
 	SetConsoleTitle(title);
 	terminal_fill("--- MaxLight v1.0 --- Max 2021 ---\n\n\n");
 
