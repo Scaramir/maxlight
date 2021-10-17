@@ -91,7 +91,9 @@ void loop() {
         }
         #endif
         
-        strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
+        strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, 99);
+        strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 102, LED_COUNT);
+        
         strip.show();
       }
     }
