@@ -27,8 +27,9 @@ Workaround: use Firefox or something else...
 
 ## TODOs:
 - [x] Check the fading function for flaws 
-    - [ ] Apply the gamma correction only while sending, not in retrieve_pixel(). 
-- [ ] Multi-threaded matrix iteration (2)
+    - [x] Write an extra gamma_correction() function. 
+    - [x] Apply the gamma correction only while sending, not in retrieve_pixel(). 
+- [ ] Multi-threaded matrix iterations (2)?
 - [ ] better USB-connection, e.g. detect disconnection and wait until ready before buffer gets send
 - [ ] Reinitialize enumerator and devices after device failure
 - [ ] Have a stop/interrupt call to switch to modes or config
@@ -36,30 +37,30 @@ Workaround: use Firefox or something else...
     - [ ] static light
     - [ ] standard light effects (rainbow, smooth, ...)
     - [ ] overall darken/brighten factor
-- [ ] Assign areas to distinguished LEDs or LED-stripes 
-    - [ ] upgrade iteration 
+- [ ] Assign monitor areas to distinguished LEDs or LED-stripes
+    - [ ] monitor iterations can be split in different loops(/threads) 
     - [ ] re-write buffer-send
     - [ ] Arduino-script to distribute buffer-values to LEDs/stripes
-    - [ ] create a UI?
-- [ ] Gamma-correction value shift and matched gamma-values for glasses with blue-filters and display night modes
+- [ ] Gamma-correction value shift and matched gamma-values for "night mode"
 - [x] (Think about image compression)
-- [ ] lower gpu-usage: don't send unnecessary large copies multiple times through BUS per frame
-- [ ] Turn the onsole application into a nice UI after the bachelor's thesis.
+- [ ] Turn the console application into a nice UI after the bachelor's thesis.
     
 
 
 ## Appendix:
 The project got compiled by Visual Studios' "Release Mode"  with winSDK and only works on Windows 8.1 and higher on x64. \
-'lumos_maxima.cpp' is the Arduino code and got compiled to the arduino by the Arduino-IDE, using it's old compiler (for CH340)
+'lumos_maxima.cpp' is the Arduino code and got compiled to the arduino by the Arduino-IDE, using it's old compiler (for CH340) \
 ..nothing fancy.. 
+
 
 More features will come soon. \
  
 
 
 ## Known issues: \
-Rotated monitors won't get captured. I will re-read how windows passes rotated frames and pass the rotation-mode to the functions. 
-Switching from or to a fullscreen mode programm causes an access loss of the variables or stucks in an api-function. Restart the Program and switch/'Alt+Tab' back to the game within 5 seconds. This accounts to every display-mode switch (change of resolution, lockscreen, changing games from window mode to fullscreen, ...).
+It can only find a USB-port with a COM-port number below 10. Make sure to connect the arduino to the pc, not a hub in a hub. \
+Rotated monitors won't get captured. I will re-read how windows passes rotated frames and pass the rotation-mode to the functions. \ 
+Switching from or to a fullscreen mode programm causes an access loss of the variables or stucks in an api-function. Restart the Program and switch/'Alt+Tab' back to the game within 5 seconds. This accounts to every display-mode switch (change of resolution, lockscreen, changing games from window mode to fullscreen, ...). \
 A lot of programs handle the DirectX full screen switch well enough and work well with this program. 
 The presets were optimized for "Cat Quest 2" and video games.  
 
