@@ -623,16 +623,16 @@ bool setup_and_benchmark() {
 			if (std::chrono::steady_clock::now() - start > std::chrono::seconds(10)) // runtime
 				break;
 			mean_color_old = mean_color_new;
-			if (get_frame()) {
-				mean_color_new = retrieve_pixel(mapped_subresource);
-
-				mean_color_new = fade(mean_color_new);
-				if (!send_data(mean_color_new)) {									// send data to micro controller
-					terminal_fill("Sending data to the micro controller failed!\n\tTrying to reconnect...\n", 12);
-					Sleep(5000);
-					connection_setup();
-					Sleep(5000);
-				}
+			if (!get_frame())
+				continue;
+			mean_color_new = retrieve_pixel(mapped_subresource);
+			mean_color_new = fade(mean_color_new);
+			Pixel mean_color_gamma_corrected = gamma_correction(mean_color_new);
+			if (!send_data(mean_color_gamma_corrected)) {									// send data to micro controller
+				terminal_fill("Sending data to the micro controller failed!\n\tTrying to reconnect...\n", 12);
+				Sleep(5000);
+				connection_setup();
+				Sleep(5000);
 			}
 			++get_frame_call;
 		}
