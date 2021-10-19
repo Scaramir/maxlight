@@ -69,7 +69,7 @@ namespace screen_capture {
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
 	// reject_sub_pixel()
 	UINT8 min_saturation_per_pixel = 18;							// optional accents: 60;
-	UINT8 min_brightness_per_pixel = 50;							//                  160;
+	UINT8 min_brightness_per_pixel = 40;							//                  160;
 // get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	D3D11_MAPPED_SUBRESOURCE mapped_subresource;
@@ -86,7 +86,7 @@ namespace screen_capture {
 		int r = 0;
 	};
 // fade:
-	int fade_val = 110;												// default value
+	int fade_val = 90;												// default value
 	Pixel mean_color_old;
 	Pixel mean_color_new;
 
@@ -234,7 +234,7 @@ bool check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D>& frame_texture) {
 		printf("Creating new 2DTexture\n");
 
 	D3D11_SUBRESOURCE_DATA sub_data = {
-		sub_data.pSysMem = std::calloc(texture_desc.Width * texture_desc.Height, 4),
+		sub_data.pSysMem = std::calloc((long long int)texture_desc.Width * texture_desc.Height, 4),
 		sub_data.SysMemPitch = 4 * texture_desc.Width,
 		sub_data.SysMemSlicePitch = 0
 	};
@@ -445,24 +445,8 @@ bool reject_sub_pixel(Pixel& curr_pixel) {
 	if (min_brightness_per_pixel == 0 && min_saturation_per_pixel == 0)
 		return false;
 	else
-		return ( ((curr_pixel.b >= min_brightness_per_pixel) || (curr_pixel.g >= min_brightness_per_pixel) || (curr_pixel.r >= min_brightness_per_pixel)) || ((abs(curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) && (abs(curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel)));
+		return ( ((curr_pixel.b < min_brightness_per_pixel) && (curr_pixel.g < min_brightness_per_pixel) && (curr_pixel.r < min_brightness_per_pixel)) || ((abs(curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) && (abs(curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel)));
 }
-
-// true gamme correction:
-#if 0
-// TODO
-std::vector<std::vector<uint8_t>> setup_gamma() {
-	std::vector<std::vector<uint8_t>> gamma(256, std::vector<uint8_t>(3, 0));
-	// Pre-compute gamma correction table for LED brightness levels:
-	for (int i = 0; i < 256; ++i) {
-		float f = pow((float)i / 255., 2.8);
-		gamma[i][0] = (uint8_t)(f * 255.);
-		gamma[i][1] = (uint8_t)(f * 240.);
-		gamma[i][2] = (uint8_t)(f * 220.);
-	}
-	return gamma;
-}
-#endif
 
 /**
  * @brief retrieve pixel data and calculate the mean of the latest frame directly
@@ -502,35 +486,65 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
 		}
 	}
 
-	UINT8 zero = 0;
 	if (pixel_amount == 0)															// avert division by zero 
 		mean_pixel = mean_color_old;												// ..mh nothing found, let's send old frame and fade once more..
 		//return mean_pixel = { 0, 0, 0 };											// send_data(): does nothing, if 'black'
 		//return mean_pixel = {10, 0, 30};											// Default lila for dark scenes
 
 	mean_pixel = {    //gamma adjustment
-		accum_pixel.b == zero ? zero : gamma8[((accum_pixel.b - (accum_pixel.b / 3)) / pixel_amount + 1/*+ (accum_pixel.b % pixel_amount != zero)*/)],		// blue is a bit too intense with WS2812b ICs on 5050LEDs
-		accum_pixel.g == zero ? zero : gamma8[(accum_pixel.g / pixel_amount + 1/*+ (accum_pixel.g % pixel_amount != zero)*/)],								// comment: integer ceiling
-		accum_pixel.r == zero ? zero : gamma8[(accum_pixel.r / pixel_amount + 1/*+ (accum_pixel.r % pixel_amount != zero)*/)],
+		accum_pixel.b == 0 ? 0 : (accum_pixel.b / pixel_amount + 1/*+ (accum_pixel.b % pixel_amount != 0)*/),		// comment additions: integer ceiling
+		accum_pixel.g == 0 ? 0 : (accum_pixel.g / pixel_amount + 1/*+ (accum_pixel.g % pixel_amount != 0)*/),		
+		accum_pixel.r == 0 ? 0 : (accum_pixel.r / pixel_amount + 1/*+ (accum_pixel.r % pixel_amount != 0)*/),
 	};
 
 	return mean_pixel;
 }
 
 /**
- * @brief fades the old color with the newly obtained one, to got not that instantaneoulsy changing lights.
+ * @brief fades the old color with the newly obtained one, to get not that instantaneoulsy changing lights.
  * @param mean_pixel_new the new average color
  * @return mean_pixel_fade the faded color
  */
-Pixel fade(Pixel& mean_pixel) {
-	Pixel mean_pixel_faded = {
-		(mean_pixel.b * (256 - fade_val) + mean_color_old.b * fade_val) >> 8,
-		(mean_pixel.g * (256 - fade_val) + mean_color_old.g * fade_val) >> 8,
-		(mean_pixel.r * (256 - fade_val) + mean_color_old.r * fade_val) >> 8
+Pixel fade(Pixel& pixel) {
+	Pixel pixel_faded = {
+		(pixel.b * (256 - fade_val) + mean_color_old.b * fade_val) >> 8,
+		(pixel.g * (256 - fade_val) + mean_color_old.g * fade_val) >> 8,
+		(pixel.r * (256 - fade_val) + mean_color_old.r * fade_val) >> 8
 	};
 
-	return mean_pixel_faded;
+	return pixel_faded;
 }
+
+/**
+ * @brief grabs the gamma corrected values for each color out of ::gamma8[]
+ * @param pixel 
+ * @return Pixel after gamma_correction 
+ */
+Pixel gamma_correction(Pixel& pixel){
+	Pixel pixel_gamma_corrected = {
+		gamma8[pixel.b == 0 ? 0 : pixel.b  - (pixel.b / 3)],		// blue is a bit too intense with WS2812b ICs on 5050LEDs
+		gamma8[pixel.g],
+		gamma8[pixel.r]
+	};
+
+	return pixel_gamma_corrected;
+}
+
+// true gamme correction:
+// TODO
+#if 0
+std::vector<std::vector<uint8_t>> setup_gamma() {
+	std::vector<std::vector<uint8_t>> gamma(256, std::vector<uint8_t>(3, 0));
+	// Pre-compute gamma correction table for LED brightness levels:
+	for (int i = 0; i < 256; ++i) {
+		float f = pow((float)i / 255., 2.8);
+		gamma[i][0] = (uint8_t)(f * 255.);
+		gamma[i][1] = (uint8_t)(f * 240.);
+		gamma[i][2] = (uint8_t)(f * 220.);
+	}
+	return gamma;
+}
+#endif
 
 /**
  * @brief connect the program with the micro controller
@@ -539,13 +553,13 @@ Pixel fade(Pixel& mean_pixel) {
 bool connection_setup() {
 	terminal_fill("\nTrying to connect with the LED controller\n\t...\n");
  
-	SP = new Serial(serial_port);		// try my own default USB-port first
+	SP = new Serial(serial_port);				// try my own default USB-port first
 	if (SP->IsConnected()) {
 		terminal_fill("Connection established! Let in the light!\n");
 		return SP->IsConnected();
 	}
 	
-	for (int i = 0; i < 10; ++i) {		// now every other Port from 0 to 9
+	for (int i = 0; i < 10; ++i) {				// now every other Port from 0 to 9
 		std::string s = "COM";
 		s.push_back((char)(i + 48));
 		const char* c = s.c_str();
@@ -559,14 +573,14 @@ bool connection_setup() {
 }
 
 /**
- * @brief send byte array to the micro controller. The first two bytes are the signature bytes. RGB gets attached.
- * @param mean_color_new, the new color values to be sent.
+ * @brief send byte array to the micro controller. The first two bytes are the signature bytes. RGB8 gets attached.
+ * @param pixel, the new color values to be sent.
  * @return true, if send_data() worked or frame was 'black'.
  */
-bool send_data(Pixel& mean_color_new) {
-	if (mean_color_new.r == 0 && mean_color_new.g == 0 && mean_color_new.b == 0)
+bool send_data(Pixel& pixel) {
+	if (pixel.r == 0 && pixel.g == 0 && pixel.b == 0)
 		return true;
-	uint8_t buffer[5] = { 'm', 'o', (uint8_t)mean_color_new.r, (uint8_t)mean_color_new.g, (uint8_t)mean_color_new.b };
+	uint8_t buffer[5] = { 'm', 'o', (uint8_t)pixel.r, (uint8_t)pixel.g, (uint8_t)pixel.b };
 	//Sleep(1);
 
 	return SP->WriteData(buffer, 5 /*sizeof(buffer)*/);
@@ -585,7 +599,7 @@ bool setup_and_benchmark() {
 		if (!connection_setup())
 			return false;
 		Sleep(4500);
-		create_and_get_device(chosen_output_num);		 	// not finished... how do i pass a specific device+monitor to CreateDevice()?
+		create_and_get_device(chosen_output_num);		 	// not finished... how do i pass a specific device+monitor to CreateDevice() for different grakas and rotations?
 		return true;
 	}
 	if (!connection_setup())
@@ -624,11 +638,6 @@ bool setup_and_benchmark() {
 		}
 		terminal_fill("I looped exactly " + std::to_string(get_frame_call) + " times.\n", 14);
 		terminal_fill("I captured: ~" + std::to_string(mapped_frames_counter / 10) + " fps.\n", 14);
-		/*
-		std::cout << "fail_invalid: " << fail_invalid << "\n";
-		std::cout << "fail_1: " << fail_1 << "\n";
-		std::cout << "fail_2: " << fail_2 << "\n";
-		*/
 	}
 	set_sleepTimerMs(user_fps); 		// reset
 
@@ -662,13 +671,13 @@ bool configuration() {
 		terminal_fill("Insert fading factor from one frame to another (0 - 255):\t\tDefault: 110\n", 11);
 		std::cin.clear();
 		std::cin >> fade_val;
-	} else {
-		terminal_fill("\n--- Proceeding with following settings: ---\n");
-		std::cout << "\tMin.Brightness per Pixel: " << (int)min_brightness_per_pixel << "\n";
-		std::cout << "\tMin. Saturation per Pixel: " << (int)min_saturation_per_pixel << "\n";
-		std::cout << "\tFading factor: " << fade_val << "\n";
-		std::cout << "\tMax. fps: " << fps << "\n";
 	}
+	terminal_fill("\n--- Proceeding with following settings: ---\n");
+	std::cout << "\tMin.Brightness per Pixel: " << (int)min_brightness_per_pixel << "\n";
+	std::cout << "\tMin. Saturation per Pixel: " << (int)min_saturation_per_pixel << "\n";
+	std::cout << "\tFading factor: " << fade_val << "\n";
+	std::cout << "\tMax. fps: " << fps << "\n";
+
 	return true;
 }
 
@@ -676,9 +685,10 @@ bool configuration() {
 //##################################### M A I N ###############################################
 //###################################### v1.0 #################################################
 int main() {
-	LPCSTR title = "MaxLight";		//LPCWSTR title = L"MaxLight";
+	//LPCSTR title = "MaxLight"; 								// for VS Code
+	LPCWSTR title = L"MaxLight"; 								// for VS2019
 	SetConsoleTitle(title);
-	terminal_fill("--- MaxLight v1.0 --- Max 2021 ---\n\n\n");
+	terminal_fill("--- MaxLight v1.0 --- \n\n\n");
 
 	chosen_output_num = check_monitor_devices();
 	if (chosen_output_num < 0 || chosen_output_num >= outputs.size()) {
@@ -694,12 +704,13 @@ int main() {
 	terminal_fill("\n--- Starting continues analyzation ---\n\n");
 
 	while (true) {
-		mean_color_old = mean_color_new;				// used in 'fade()'
-		if (!get_frame()) 								// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
+		mean_color_old = mean_color_new;						// used in 'fade()'
+		if (!get_frame()) 										// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
 			continue;
 		mean_color_new = retrieve_pixel(mapped_subresource);
 		mean_color_new = fade(mean_color_new);
-		if (!send_data(mean_color_new)) {				// send data to micro controller
+		Pixel mean_color_gamma_corrected = gamma_correction(mean_color_new);
+		if (!send_data(mean_color_gamma_corrected)) {		// send data to micro controller
 			terminal_fill("Error: Sending data to the micro controller failed!\n\tTrying to reconnect...\n", 12);
 			Sleep(5000);
 			connection_setup();
@@ -707,7 +718,7 @@ int main() {
 		}
 		// prints:
 		if (mapped_frames_counter % (fps + 1) == 0)
-			std::cout << "new_avg_pixel: " << mean_color_new.r << "r, " << mean_color_new.g << "g, " << mean_color_new.b << "b   \r";
+			std::cout << "new_avg_pixel: " << mean_color_gamma_corrected.r << "r, " << mean_color_gamma_corrected.g << "g, " << mean_color_gamma_corrected.b << "b   \r";
 	}
 
 	std::cin.clear();
