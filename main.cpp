@@ -637,7 +637,7 @@ bool setup_and_benchmark() {
 			++get_frame_call;
 		}
 		terminal_fill("I looped exactly " + std::to_string(get_frame_call) + " times.\n", 14);
-		terminal_fill("I captured: ~" + std::to_string(mapped_frames_counter / 10) + " fps.\n", 14);
+		terminal_fill("I captured: ~" + std::to_string(get_frame_call / 10) + " fps.\n", 14);
 	}
 	set_sleepTimerMs(user_fps); 		// reset
 
