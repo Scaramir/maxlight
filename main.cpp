@@ -524,7 +524,7 @@ Pixel gamma_correction(Pixel& pixel){
 	Pixel pixel_gamma_corrected = {
 		gamma8[pixel.b == 0 ? 0 : pixel.b - (pixel.b / 3)],		// blue is a bit too intense with WS2812b ICs on 5050LEDs
 		gamma8[pixel.g == 0 ? 0 : pixel.g - (pixel.g / 10)],	// and green is intense for the eyes 
-		gamma8[pixel.r]
+		gamma8[pixel.r - 1] + 1										// always a little red
 	};
 
 	return pixel_gamma_corrected;

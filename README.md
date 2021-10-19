@@ -51,7 +51,7 @@ Workaround: use Firefox or something else...
 The project got compiled by Visual Studios' "Release Mode"  with winSDK and only works on Windows 8.1 and higher on x64. \
 'lumos_maxima.cpp' is the Arduino code and got compiled to the arduino by the Arduino-IDE, using it's old compiler (for CH340) \
 ..nothing fancy.. 
-
+Just ask me for a license and i will add one. \
 
 More features will come soon. \
  
