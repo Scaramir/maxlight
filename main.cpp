@@ -445,7 +445,7 @@ bool reject_sub_pixel(Pixel& curr_pixel) {
 	if (min_brightness_per_pixel == 0 && min_saturation_per_pixel == 0)
 		return false;
 	else
-		return (!((curr_pixel.b > min_brightness_per_pixel) || (curr_pixel.g > min_brightness_per_pixel) || (curr_pixel.r > min_brightness_per_pixel)) || ((abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel) && (abs(curr_pixel.b - curr_pixel.r) < min_saturation_per_pixel)));
+		return ( ((curr_pixel.b >= min_brightness_per_pixel) || (curr_pixel.g >= min_brightness_per_pixel) || (curr_pixel.r >= min_brightness_per_pixel)) || ((abs(curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) && (abs(curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel)));
 }
 
 // true gamme correction:
