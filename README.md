@@ -30,7 +30,7 @@ Workaround: use Firefox or something else...
     - [x] Write an extra gamma_correction() function. 
     - [x] Apply the gamma correction only while sending, not in retrieve_pixel(). 
 - [ ] Multi-threaded matrix iterations (2)?
-- [ ] better USB-connection, e.g. detect disconnection and wait until ready before buffer gets send
+- [x] better USB-connection, e.g. detect disconnection
 - [ ] Reinitialize enumerator and devices after device failure
 - [ ] Have a stop/interrupt call to switch to modes or config
 - [ ] Implement modes 
