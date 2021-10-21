@@ -59,10 +59,10 @@ More features will come soon.
 
 
 ## Known issues:
-- It can only find a USB-port with a COM-port number below 10. Make sure to connect the arduino to the pc, not to a hub on a hub. \
-- Rotated monitors won't get captured. I will re-read how to solve this issue. \ 
+- It can only find a USB-port with a COM-port number below 10. Make sure to connect the arduino to the pc, not to a hub on a hub.
+- Rotated monitors won't get captured. I will re-read how to solve this issue. 
 - A lot of programs and games handle the DirectX full screen switch well enough to work with this program. But the following happens sometimes: \
-Switching from or to a fullscreen mode programm causes an access loss of the GPU-variables or it gets stuck in an windows-api-function. Restart the program and switch / 'Alt+Tab' back to the game within 5 seconds. This accounts to every display mode switch (change of resolution, lockscreen, changing games from window mode to fullscreen, ...). \ 
+Switching from or to a fullscreen mode programm causes an access loss of the GPU-variables or it gets stuck in an windows-api-function. Restart the program and switch / 'Alt+Tab' back to the game within 5 seconds. This accounts to every display mode switch (change of resolution, lockscreen, changing games from window mode to fullscreen, ...).
 - Netflix' desktop app and some other apps and sites with strong DRM-protection will block the win desktop duplication api from grabbing the frames. 
 Workaround: use Firefox or whatever... 
 
