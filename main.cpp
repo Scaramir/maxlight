@@ -35,7 +35,7 @@
 D3D_DRIVER_TYPE gDriverTypes[] = { D3D_DRIVER_TYPE_HARDWARE };
 UINT gNumDriverTypes = ARRAYSIZE(gDriverTypes);
 
-// Customized feature level support
+// Customized DirectX feature level support
 D3D_FEATURE_LEVEL gFeatureLevels[] = {
 	D3D_FEATURE_LEVEL_11_1,
 	D3D_FEATURE_LEVEL_11_0,
@@ -343,7 +343,7 @@ int create_and_get_device(int& chosen_monitor) {
 	texture_desc.SampleDesc.Quality = 0;
 	texture_desc.Usage = D3D11_USAGE_STAGING /*D3D11_USAGE_DYNAMIC*/;					 					 // comments: this would lead to a GPU accessible texture only. --> TODO
 	texture_desc.BindFlags = 0 /*D3D11_BIND_SHADER_RESOURCE*/;
-	texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE /*D3D11_CPU_ACCESS_WRITE*/; // 0 doesn't work -> invalid_arg
+	texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE /*D3D11_CPU_ACCESS_WRITE*/; 
 	texture_desc.MiscFlags = 0;
 	std::cout << "Capturing a " << texture_desc.Width << " x " << texture_desc.Height << " monitor.\n";
 
@@ -423,7 +423,7 @@ bool get_frame() {
 	 *  - capture in a 2DTexture in gpu ram, "/alternative params/"
 	 *  - obtain a shaderstructure, apply a mipmap-chain with (custom) filters (covering the conditions of reject_sub_pixel()).
 	 *  - memcpy() mipmaps to cpu access structure.
-	 * but this way works just fine for ~75fps:
+	 * but this way works just fine:
 	 */
 	hr = context->Map(frame_texture, 0, D3D11_MAP_READ_WRITE /*D3D11_MAP_WRITE_DISCARD*/, 0, &mapped_subresource);
 	if (S_OK != hr) {
@@ -437,7 +437,7 @@ bool get_frame() {
 }
 
 /**
- * @brief test the brightness of the current pixel (after gamma correction)
+ * @brief test the brightness and saturation of the current pixel.
  * @param curr_pixel
  * @return true, if pixel is too dark or too white and needs to be ignored.
 */
@@ -467,7 +467,7 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
 
 	accum_pixel = { 0, 0, 0 };
 	int pixel_amount = 0;
-	for (UINT row = 0; row < height; row = row + 2) {							    // +2 instead of ++ drops half the resolution
+	for (UINT row = 0; row < height; row = row + 3) {							    // +2 instead of ++ drops half the resolution
 		UINT row_start = row * mapped_subresource.RowPitch / 4;
 		for (UINT col = 0; col < width; col = col + 2) {						    // col + quality_loss 
 
@@ -492,7 +492,7 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
 		//return mean_pixel = {10, 0, 30};											// Default lila for dark scenes
 
 	mean_pixel = {    //gamma adjustment
-		accum_pixel.b == 0 ? 0 : (accum_pixel.b / pixel_amount + 1/*+ (accum_pixel.b % pixel_amount != 0)*/),		// comment additions: integer ceiling
+		accum_pixel.b == 0 ? 0 : (accum_pixel.b / pixel_amount + 1/*+ (accum_pixel.b % pixel_amount != 0)*/),		// commented additions: integer ceiling
 		accum_pixel.g == 0 ? 0 : (accum_pixel.g / pixel_amount + 1/*+ (accum_pixel.g % pixel_amount != 0)*/),		
 		accum_pixel.r == 0 ? 0 : (accum_pixel.r / pixel_amount + 1/*+ (accum_pixel.r % pixel_amount != 0)*/),
 	};
@@ -501,7 +501,7 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
 }
 
 /**
- * @brief fades the old color with the newly obtained one, to get not that instantaneoulsy changing lights.
+ * @brief fades the old color with the newly obtained one, to get not that drastically changing lights.
  * @param mean_pixel_new the new average color
  * @return mean_pixel_fade the faded color
  */
@@ -524,7 +524,7 @@ Pixel gamma_correction(Pixel& pixel){
 	Pixel pixel_gamma_corrected = {
 		gamma8[pixel.b == 0 ? 0 : pixel.b - (pixel.b / 3)],		// blue is a bit too intense with WS2812b ICs on 5050LEDs
 		gamma8[pixel.g == 0 ? 0 : pixel.g - (pixel.g / 10)],	// and green is intense for the eyes 
-		gamma8[pixel.r - 1] + 1										// always a little red
+		gamma8[pixel.r - 1] + 1									// always a little red
 	};
 
 	return pixel_gamma_corrected;
