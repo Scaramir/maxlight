@@ -70,22 +70,22 @@ namespace screen_capture {
 	// reject_sub_pixel()
 	UINT8 min_saturation_per_pixel = 18;							// optional accents: 60;
 	UINT8 min_brightness_per_pixel = 40;							//                  160;
-// get_frame()
+	// get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	D3D11_MAPPED_SUBRESOURCE mapped_subresource;
-// benchmark
+	// benchmark
 	int mapped_frames_counter = 0;
-// arduino connection 
+	// arduino connection 
 	const char serial_port[] = { 'C', 'O', 'M', '7' };			    // usb port name 
 	Serial* SP;
-// led_stuff:
+	// led_stuff:
 	struct Pixel {
 	public:
 		int b = 0;	                   								// initialized to 'black'; 
 		int g = 0;
 		int r = 0;
 	};
-// fade:
+	// fade:
 	int fade_val = 90;												// default value
 	Pixel mean_color_old;
 	Pixel mean_color_new;
@@ -111,6 +111,7 @@ namespace screen_capture {
 using namespace screen_capture;
 //#############################################################################################
 
+// Print every char of a string to the console with a short dely between each char
 /**
  * @brief unrolling text on terminal
  * @param text to print
@@ -131,7 +132,7 @@ void terminal_fill(std::string s, int c = 10) {
 	return;
 }
 
-// Check Devices for outputs
+// Check devices for outputs and enumerate them
 /**
  * @brief check monitors (outputs) for a graphic adpater and push it into vec<output>
  * @param i index of adapter
@@ -145,14 +146,14 @@ int output_enumeration(INT16& i) {
 		int monitor_num = outputs.size();	// current monitor index
 		std::cout << "\t  (" << monitor_num << ".) ";
 		printf("Found monitor %d on adapter: %lu \n", monitor_num, i);
-		outputs.push_back(output);	// store the found monitor
+		outputs.push_back(output);			// store the found monitor
 
-		DXGI_OUTPUT_DESC desc;		// get description of the monitor
+		DXGI_OUTPUT_DESC desc;				// get description of the monitor
 		HRESULT hr = outputs[monitor_num]->GetDesc(&desc);
-		if (SUCCEEDED(hr)) {		// print info
+		if (SUCCEEDED(hr)) {				// print info
 			wprintf(L"\t\tMonitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'Y' : 'n');
 			std::cout << "\t\twith the following dimensions:\n\t\t " <<
-			   abs(abs((int)desc.DesktopCoordinates.right) - abs((int)desc.DesktopCoordinates.left)) <<
+			    abs(abs((int)desc.DesktopCoordinates.right) - abs((int)desc.DesktopCoordinates.left)) <<
 				" x " <<
 				abs(abs((int)desc.DesktopCoordinates.top) - abs((int)desc.DesktopCoordinates.bottom)) <<
 				" pixel" << "\n";
@@ -200,9 +201,9 @@ int check_monitor_devices() {
 		hr = adapters[i]->GetDesc1(&desc);
 
 		if (SUCCEEDED(hr)) {
-			wprintf(L"Adapter: %lu, description: %s\n\t..searching for monitors..\n", i, desc.Description); //wide-character for UNICODE
-			int found_on_adapter = output_enumeration(i);
-			std::cout << "\t" << found_on_adapter << " monitor(s) found.\n\n";
+			wprintf(L"Adapter: %lu, description: %s\n", i, desc.Description);
+			int monitors_on_adapter = output_enumeration(i);
+			std::cout << "\t" << monitors_on_adapter << " monitor(s) found.\n\n";
 		} else {
 			terminal_fill("\tError: failed to get a description for the adapter: " + std::to_string(i) + "\n  Please check your drivers.\n", 12);
 			continue;
@@ -222,16 +223,14 @@ int check_monitor_devices() {
 }
 
 /**
- * @brief creates a cpu access texture (D3D11Texture2D); this way, the texture can get copied and mapped.
- * this can be stored in system memory or as a shader-texture
+ * @brief creates a cpu-accessible texture (D3D11Texture2D); this way, the texture can get copied and mapped.
+ * @param frame_texture where the frame gets saved (memory-wise)
  * @return false, if texture is not accessible
  */
 bool check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D>& frame_texture) {
 	//create a texture with cpu_access_read
 	if (frame_texture != nullptr)
 		return false;
-	else
-		printf("Creating new 2DTexture\n");
 
 	D3D11_SUBRESOURCE_DATA sub_data = {
 		sub_data.pSysMem = std::calloc((long long int)texture_desc.Width * texture_desc.Height, 4),
@@ -244,8 +243,6 @@ bool check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D>& frame_texture) {
 		terminal_fill("Error: Failed to create the 2DTexture.\n", 12);
 		return false;
 	}
-	//else
-	//	printf("'CreateTexture2D()' was successful!\n");
 
 	return true;
 }
@@ -253,7 +250,7 @@ bool check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D>& frame_texture) {
 //create D3DX-Device and query interfaces 
 /**
  * @brief create device (D3D11) for @chosen_monitor
- * @param chosen_monitor number of monitor (retrieve of @outputs)
+ * @param chosen_monitor number of the monitor (retrieved of @outputs)
  * @return success (0) or fail (negativ)
  */
 int create_and_get_device(int& chosen_monitor) {
@@ -276,7 +273,6 @@ int create_and_get_device(int& chosen_monitor) {
 			&context						// OUT: the ID3D11DeviceContext that represents the above features. 
 		);
 		if (SUCCEEDED(hr)) {
-			printf("Device creation successful.\n");
 			break;
 		}
 	}
@@ -327,8 +323,6 @@ int create_and_get_device(int& chosen_monitor) {
 		return -4;
 	}
 	output1.Release();
-
-	std::cout << "Desktop duplication device created succesfully " << "\n";
 
 	//texture description
 	DXGI_OUTDUPL_DESC desktop_duplicate_desc;
@@ -685,7 +679,7 @@ bool configuration() {
 //##################################### M A I N ###############################################
 //###################################### v1.0 #################################################
 int main() {
-	//LPCSTR title = "MaxLight"; 								// for VS Code
+	//LPCSTR title = "MaxLight"; 								// for VS Code  
 	LPCWSTR title = L"MaxLight"; 								// for VS2019
 	SetConsoleTitle(title);
 	terminal_fill("--- MaxLight v1.0 --- \n\n\n");
