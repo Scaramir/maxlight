@@ -15,6 +15,9 @@ Keeping the CPU usage low was one of the goals, because gaming on my very own se
 A super low latency was important as well.
 
 ## Using the program aka finding your preferred config.-values: 
+Make sure to install an USB-driver for the arduino. In my case it's the CH430-driver.\
+Your computer recognizes the device? \
+Go ahead and run the program:
 ```
 Inserting higher saturation and brightness values in the setup will show you the current color accents of the screen. 
 For watching a movie, I'd recommend lower values to get an ambient lighting and smoother transitions. 
