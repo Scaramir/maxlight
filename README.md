@@ -15,7 +15,7 @@ Keeping the CPU usage low was one of the goals, because gaming on my very own se
 A super low latency was important as well.
 
 ## Using the program aka finding your preferred config.-values: 
-Make sure to install an USB-driver for the arduino. In my case it's the CH430-driver.\
+Make sure to install an USB-driver for the arduino. In my case it's the CH340-driver.\
 Your computer recognizes the device? \
 Go ahead and run the program:
 ```
