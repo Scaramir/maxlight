@@ -34,14 +34,13 @@ The presets were optimized for "Cat Quest 2"(video games) and animes.
 - [x] Check the fading function for flaws 
     - [x] Write an extra gamma_correction() function. 
     - [x] Apply the gamma correction only while sending, not in retrieve_pixel(). 
-- [ ] Multi-threaded matrix iterations (2)?
 - [x] better USB-connection, e.g. detect disconnect and wait for re-connect
 - [ ] Reinitialize enumerator and devices after device failure
 - [ ] Implement modes 
     - [ ] static light
     - [ ] standard light effects (rainbow, smooth, ...)
     - [ ] overall darken/brighten factor
-- [ ] Assign monitor areas to distinguished LEDs or LED-stripes
+- [ ] Assign monitor areas to distinguished LEDs or LED-stripes (Ambilight(TM)-style)
     - [ ] monitor iterations can be split in different loops(/threads) 
     - [ ] re-write buffer-send
     - [ ] Arduino-script to distribute buffer-values to LEDs/stripes
