@@ -15,7 +15,7 @@
 
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
- #include <avr/power.h>   // Required for 16 MHz Adafruit Trinket
+  #include <avr/power.h>   // Required for 16 MHz Adafruit Trinket
 #endif
 
 // Which pin on the Arduino is connected to the strip?
@@ -100,47 +100,3 @@ void loop() {
   }
 
 }
-
-#if 0
-//work in progress!
-//this doesn't work, bu it would be nice to let the arduino do the fading and have a continues fade...
-// loop() function -- runs repeatedly as long as board is on ---------------
-void loop() {
-
-	for (uint8_t i = 0; i < buffer_size; ++i)
-		buffer_old[i] = buffer[i];
-
-	if (Serial.available() > 0) {
-	    buffer_tmp[index++] = Serial.read();
-	    if (index >= buffer_size) {
-	        index = 0;
-	        if (buffer_tmp[0] == 'm' && buffer_tmp[1] == 'o') {
-				#if 0
-				min_bright = buffer[2]+buffer[3]+buffer[4] - 150;
-				if (min_bright <= 1) {
-					if ( buffer[2] < 50 && buffer[3] < 50 && buffer[4] < 50) 
-						strip.fill(strip.Color(buffer[2] << 1, buffer[3] << 1, buffer[4] << 1), 0, LED_COUNT/*i * LED_COUNT/parts, LED_COUNT/parts*/);
-					else
-					strip.fill(strip.Color(buffer[2] + (buffer[2]>>1), buffer[3] + (buffer[3]>>1), buffer[4] + (buffer[4]>>1)), 0, LED_COUNT/*i * LED_COUNT/parts, LED_COUNT/parts*/);
-				} else {
-					strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
-				}
-				#endif
-
-				for (uint8_t i = 0; i < buffer_size; ++i)
-					buffer[i] = buffer_tmp[i];
-
-				//strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
-				//strip.show();
-	        }
-	    }
-	}
-
-	for (uint8_t i = 2; i < buffer_size; ++i)
-		buffer[i] = buffer[i] * (146) + buffer_old[i] * 110 >> 8;
-
-	strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
-	strip.show();
-	delay(2);
-}
-#endif
