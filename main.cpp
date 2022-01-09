@@ -724,7 +724,7 @@ int main() {
 		}
 		// prints:
 		if (mapped_frames_counter % (fps + 1) == 0)
-			std::cout << "new_avg_pixel_l: " << mean_color_gamma_corrected_l.r << "r, " << mean_color_gamma_corrected_l.g << "g, " << mean_color_gamma_corrected_l.b << "b, "   << mean_color_gamma_corrected_r.r << "r_r, " << mean_color_gamma_corrected_r.g << "g_r, " << mean_color_gamma_corrected_r.b << "b_r        \r";
+			std::cout << "new_avg_pixel_l: " << mean_color_gamma_corrected_l.r << "r, " << mean_color_gamma_corrected_l.g << "g, " << mean_color_gamma_corrected_l.b << "b, "   << mean_color_gamma_corrected_r.r << "r_r, " << mean_color_gamma_corrected_r.g << "g_r, " << mean_color_gamma_corrected_r.b << "b_r      \r";
 	}
 
 	std::cin.clear();
