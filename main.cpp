@@ -51,9 +51,9 @@ UINT gNumFeatureLevels = ARRAYSIZE(gFeatureLevels);
 // Declaration of global variables:
 namespace screen_capture {
 	// main:
-	static UINT sleepTimerMs = (int)(((float)1 / 33) * 1000);
-	static UINT fps = 35;
-	void set_sleepTimerMs(unsigned int& fps) { if (fps == 0) sleepTimerMs = 0; else sleepTimerMs = ((int)(((float)1 / fps) * 1000) - 1); }
+	static int sleepTimerMs = (int)(((float)1 / 33) * 1000);
+	static int fps = 35;
+	void set_sleepTimerMs(int& fps) { if (fps == 0) sleepTimerMs = 0; else sleepTimerMs = ((int)(((float)1 / fps) * 1000) - 1); }
 	HRESULT hr = E_FAIL;
 	// output_enumeration() + check_monitor_devices()
 	std::vector<IDXGIAdapter1*> adapters;							// Needs to be Released()
@@ -87,26 +87,10 @@ namespace screen_capture {
 	};
 	// fade:
 	int fade_val = 90;												// default value
-	Pixel mean_color_old;
-	Pixel mean_color_new;
-
-	const uint8_t gamma8[256] = {
-			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   1,   1,
-			1,   1,   1,   1,   1,   1,   1,   1,   1,   2,   2,   2,   2,   2,   2,   2,
-			2,   3,   3,   3,   3,   3,   3,   4,   4,   4,   4,   4,   4,   5,   5,   5,
-			5,   6,   6,   6,   6,   7,   7,   7,   7,   8,   8,   8,   9,   9,   9,   10,
-			10,  10,  11,  11,  11,  12,  12,  13,  13,  13,  14,  14,  15,  15,  16,  16,
-			17,  17,  18,  18,  19,  19,  20,  20,  21,  21,  22,  22,  23,  24,  24,  25,
-			25,  26,  27,  27,  28,  29,  29,  30,  31,  32,  32,  33,  34,  35,  35,  36,
-			37,  38,  39,  39,  40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  50,  51,
-			52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,  66,  67,  68,
-			69,  70,  72,  73,  74,  75,  77,  78,  79,  81,  82,  83,  85,  86,  87,  89,
-			90,  92,  93,  95,  96,  98,  99,  101, 102, 104, 105, 107, 109, 110, 112, 114,
-			115, 117, 119, 120, 122, 124, 126, 127, 129, 131, 133, 135, 137, 138, 140, 142,
-			144, 146, 148, 150, 152, 154, 156, 158, 160, 162, 164, 167, 169, 171, 173, 175,
-			177, 180, 182, 184, 186, 189, 191, 193, 196, 198, 200, 203, 205, 208, 210, 213,
-			215, 218, 220, 223, 225, 228, 231, 233, 236, 239, 241, 244, 247, 249, 250, 255};
+	Pixel mean_color_old_l;
+	Pixel mean_color_old_r;
+	Pixel mean_color_new_l;
+	Pixel mean_color_new_r;
 
 	const uint8_t gamma8_neo_pixel[256] = {
 			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -137,14 +121,12 @@ using namespace screen_capture;
  * @param text to print
  * @param color-value default=10 (green), red would be '12'.
  */
-void terminal_fill(std::string s, int c = 10) {
+void terminal_fill(std::string_view s, int8_t c = 10) {
 	if (s.empty())
 		return;
-
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(hConsole, c);
-
-	for (char& c : s) {
+	for (char c : s) {
 		std::cout << c;
 		Sleep(10);
 	}
@@ -158,7 +140,7 @@ void terminal_fill(std::string s, int c = 10) {
  * @param i index of adapter
  * @return
  */
-int output_enumeration(INT16& i) {
+int output_enumeration(int16_t& i) {
 	int dx = 0;
 	CComPtrCustom<IDXGIOutput> output = nullptr;
 
@@ -249,6 +231,7 @@ int check_monitor_devices() {
  */
 bool check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D>& frame_texture) {
 	//create a texture with cpu_access_read
+	//we want to copy the texture to an empty texture
 	if (frame_texture != nullptr)
 		return false;
 
@@ -331,7 +314,7 @@ int create_and_get_device(int& chosen_monitor) {
 
 	hr = chosen_output->QueryInterface(__uuidof(IDXGIOutput1), (void**)&output1);
 	if (FAILED(hr)) {
-		terminal_fill("Error: QueryInterface failed.\n", 12);
+		terminal_fill("Error: QueryInterface() failed.\n", 12);
 		return -3;
 	}
 	chosen_output->Release();
@@ -344,7 +327,7 @@ int create_and_get_device(int& chosen_monitor) {
 	}
 	output1.Release();
 
-	//texture description
+	//Initilize texture descriptions
 	DXGI_OUTDUPL_DESC desktop_duplicate_desc;
 	desktop_duplication->GetDesc(&desktop_duplicate_desc);
 	ZeroMemory(&texture_desc, sizeof(texture_desc));
@@ -357,17 +340,17 @@ int create_and_get_device(int& chosen_monitor) {
 	texture_desc.SampleDesc.Quality = 0;
 	texture_desc.Usage = D3D11_USAGE_STAGING /*D3D11_USAGE_DYNAMIC*/;					 					 // comments: this would lead to a GPU accessible texture only. --> TODO
 	texture_desc.BindFlags = 0 /*D3D11_BIND_SHADER_RESOURCE*/;
-	texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE /*D3D11_CPU_ACCESS_WRITE*/; 
+	texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE; 
 	texture_desc.MiscFlags = 0;
 	std::cout << "Capturing a " << texture_desc.Width << " x " << texture_desc.Height << " monitor.\n";
 
+	//Can the cpu read the texture?
 	if (!check_cpu_access_texture(frame_texture)) {		
 		terminal_fill("The used texture is not accessabil by the cpu. ", 12);
 		return -100;
 	}
 	
 	terminal_fill("\n--- Setup completed ---\n");
-
 	return 0;
 }
 
@@ -399,13 +382,13 @@ bool get_frame() {
 	hr = desktop_duplication->ReleaseFrame();
 
 	// let some frames get accumulated 
-	if (((int)sleepTimerMs - 10) > 1)
-		Sleep(sleepTimerMs - 10);
+	if ((sleepTimerMs - 12) > 1)
+		Sleep(sleepTimerMs - 12);
 	// this value is specific for my system 
 	// just give it some extra ms
 
     //get accumulated frames
-	hr = desktop_duplication->AcquireNextFrame(5, &frame_info, &frame); // win desktop duplication apis' core function
+	hr = desktop_duplication->AcquireNextFrame(8, &frame_info, &frame); // win desktop duplication apis' core function
 	if (hr == DXGI_ERROR_INVALID_CALL) {
 		return false;
 	} if (hr == E_INVALIDARG) {
@@ -415,8 +398,8 @@ bool get_frame() {
 	} if (FAILED(hr) && hr != DXGI_ERROR_WAIT_TIMEOUT) {				// ^= (hr == DXGI_ERROR_ACCESS_LOST)
 		desktop_duplication->ReleaseFrame();
 		desktop_duplication.Release();
-		//device.Release();
-		//context.Release();
+		device.Release();
+		context.Release();
 		create_and_get_device(chosen_output_num);
 		return false;
 	} if (hr == S_OK) {
@@ -429,16 +412,10 @@ bool get_frame() {
 		frame.Release();
 	}
 
-	//making it CPU accessible
+	// Copy to destination texture from source texture
 	context->CopyResource(frame_texture, frame_texture_ori);
 
-	/**
-	 * best way to do it would be:
-	 *  - capture in a 2DTexture in gpu ram, "/alternative params/"
-	 *  - obtain a shaderstructure, apply a mipmap-chain with (custom) filters (covering the conditions of reject_sub_pixel()).
-	 *  - memcpy() mipmaps to cpu access structure.
-	 * but this way works just fine:
-	 */
+	// Map the texture for CPU access 
 	hr = context->Map(frame_texture, 0, D3D11_MAP_READ_WRITE /*D3D11_MAP_WRITE_DISCARD*/, 0, &mapped_subresource);
 	if (S_OK != hr) {
 		terminal_fill("Error: Failed to map the pointer of 'frame_texture' to 'mapped_subresource'.\n", 12);
@@ -466,14 +443,11 @@ bool reject_sub_pixel(Pixel& curr_pixel) {
 
 /**
  * @brief retrieve pixel data and calculate the mean of the latest frame directly
- * @param mapped_subresource
+ * @param mapped_subresource: pointer to the texture
+ * @param side: '1' for left side, '2' for right side
  * @return new_pixel mean b,g,r,a values of the current frame
  */
-Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
-
-	const uint16_t height = texture_desc.Height;
-	const uint16_t width = texture_desc.Width;
-
+Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, int& side) {
 	// point to bytes/values of pixel data 
 	uint8_t* pixel_array_source = static_cast<uint8_t*>(mapped_subresource.pData);
 
@@ -483,13 +457,14 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
 
 	accum_pixel = { 0, 0, 0 };
 	int pixel_amount = 0;
-	for (UINT row = 0; row < height; row += 3) {							    // +2 instead of ++ drops half the resolution
-		UINT row_start = row * mapped_subresource.RowPitch / 4;						// usually it's RGBA but we only care for rgb, 'cause a is alwys 255
-		for (UINT col = 0; col < width; col += 2) {						    // col + quality_loss 
-
-			curr_pixel.b = pixel_array_source[row_start + col * 4 + 0];             // first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
-			curr_pixel.g = pixel_array_source[row_start + col * 4 + 1];
-			curr_pixel.r = pixel_array_source[row_start + col * 4 + 2];
+	for (UINT row = 0; row < texture_desc.Height; row += 3) {							    // +2 instead of ++ drops half the resolution
+		UINT row_start = row * mapped_subresource.RowPitch;						//  usually it's RGBA(unsigned Char) but we only care for rgb, 'cause a is alwys 255, 
+		UINT col_start = (side == 1) ? 0 : (texture_desc.Width/2);
+		UINT col_end = (side == 1) ? (texture_desc.Width / 2) : texture_desc.Width;
+		for (col_start; col_start < col_end; col_start += 3) {						    // col + quality_loss 
+			curr_pixel.b = pixel_array_source[row_start + col_start * 4 + 0];             // first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
+			curr_pixel.g = pixel_array_source[row_start + col_start * 4 + 1];
+			curr_pixel.r = pixel_array_source[row_start + col_start * 4 + 2];
 
 			if (reject_sub_pixel(curr_pixel))
 				continue;
@@ -500,10 +475,12 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
 
 			++pixel_amount;
 		}
+		if (row == texture_desc.Height - 500)
+			continue;
 	}
 
 	if (pixel_amount == 0) {															// avert division by zero 
-		mean_pixel = mean_color_old;												// ..mh nothing found, let's send old frame and fade once more..
+		mean_pixel = (side == 1) ? mean_color_old_l : mean_color_old_r;												// ..mh nothing found, let's send old frame and fade once more..
 		return mean_pixel;
 		//return mean_pixel = { 0, 0, 0 };											// send_data(): does nothing, if 'black'
 		//return mean_pixel = {10, 0, 30};											// Default lila for dark scenes
@@ -523,12 +500,12 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
  * @param mean_pixel_new the new average color
  * @return mean_pixel_fade the faded color
  */
-Pixel fade(Pixel& pixel) {
-	int8_t inv_fade_val = 256 - fade_val;
+Pixel fade(Pixel& pixel, Pixel& mean_color_old) {
+	int16_t inv_fade_val = 256 - fade_val;
 	Pixel pixel_faded = {
-		(pixel.b * (256 - fade_val) + mean_color_old.b * fade_val) >> 8,
-		(pixel.g * (256 - fade_val) + mean_color_old.g * fade_val) >> 8,
-		(pixel.r * (256 - fade_val) + mean_color_old.r * fade_val) >> 8
+		(pixel.b * (inv_fade_val) + mean_color_old.b * fade_val) >> 8,
+		(pixel.g * (inv_fade_val) + mean_color_old.g * fade_val) >> 8,
+		(pixel.r * (inv_fade_val) + mean_color_old.r * fade_val) >> 8
 	};
 
 	return pixel_faded;
@@ -541,8 +518,8 @@ Pixel fade(Pixel& pixel) {
  */
 Pixel gamma_correction(Pixel& pixel){
 	Pixel pixel_gamma_corrected = {														// TODO: use a gamma correction tabel with distinguished values for each color channel
-		gamma8_neo_pixel[pixel.b == 0 ? 0 : (int)ceil(pixel.b - (pixel.b / 3.))],		// blue is a bit too intense with WS2812b ICs on 5050LEDs
-		gamma8_neo_pixel[pixel.g == 0 ? 0 : (int)ceil(pixel.g - (pixel.g / 15.))],		// and green is intense for the eyes 
+		gamma8_neo_pixel[pixel.b == 0 ? 0 : (int)ceil(pixel.b - (pixel.b / 5.))],		// blue is a bit too intense with WS2812b ICs on 5050LEDs
+		gamma8_neo_pixel[pixel.g == 0 ? 0 : (int)ceil(pixel.g - (pixel.g / 17.))],		// and green is intense for the eyes 
 		gamma8_neo_pixel[pixel.r]														// red stays the same
 	};
 
@@ -571,15 +548,7 @@ std::vector<std::vector<uint8_t>> setup_gamma() {
  * @return bool connected
  */
 bool connection_setup() {
-	terminal_fill("\nTrying to connect with the LED controller\n\t...\n");
- 
-	/**
-	SP = new Serial(serial_port);				// try my own default USB-port first
-	if (SP->IsConnected()) {
-		terminal_fill("Connection established! Let in the light!\n");
-		return SP->IsConnected();
-	}
-	*/
+	terminal_fill("\nTrying to connect with the LED controller\r\t...\r");
 
 	std::string s = "COM0";
 	for (int i = 0; i < 1000; ++i) {				// now every other Port from 0 to 30
@@ -603,13 +572,11 @@ bool connection_setup() {
  * @param pixel, the new color values to be sent.
  * @return true, if send_data() worked or frame was 'black'.
  */
-bool send_data(Pixel& pixel) {
-	if (pixel.r == 0 && pixel.g == 0 && pixel.b == 0)
+bool send_data(Pixel& pixel_l, Pixel& pixel_r) {
+	if ((pixel_l.r == 0) & (pixel_l.g == 0) & (pixel_l.b == 0) & (pixel_r.r == 0) & (pixel_r.g == 0) & (pixel_r.b == 0))
 		return true;
-	uint8_t buffer[5] = { 'm', 'o', (uint8_t)pixel.r, (uint8_t)pixel.g, (uint8_t)pixel.b };
-	//Sleep(1);
-
-	return SP->WriteData(buffer, 5 /*sizeof(buffer)*/);
+	uint8_t buffer[8] = { 'm', 'o', (uint8_t)pixel_l.r, (uint8_t)pixel_l.g, (uint8_t)pixel_l.b, (uint8_t)pixel_r.r, (uint8_t)pixel_r.g, (uint8_t)pixel_r.b };
+	return SP->WriteData(buffer, 8 /*sizeof(buffer)*/);
 }
 
 /**
@@ -634,8 +601,8 @@ bool setup_and_benchmark() {
 	create_and_get_device(chosen_output_num);
 
 	terminal_fill("I will run a test for 50 seconds, now.\n", 14);
-	UINT user_fps = fps;
-	std::vector<uint32_t> fps_vec = { user_fps, 25, 30, 60, 0 };
+	int user_fps = fps;
+	std::vector<int> fps_vec = { user_fps, 25, 30, 60, 0 };
 	for (size_t i = 0; i < fps_vec.size(); ++i) {
 		terminal_fill("\n--- Checking for max. " + std::to_string((int)fps_vec[i]) + "fps: ---\n", 14);
 
@@ -648,13 +615,20 @@ bool setup_and_benchmark() {
 		while (true) {
 			if (std::chrono::steady_clock::now() - start > std::chrono::seconds(10)) // runtime
 				break;
-			mean_color_old = mean_color_new;
-			if (!get_frame())
+			mean_color_old_l = mean_color_new_l; // used in 'fade()'
+			mean_color_old_r = mean_color_new_r; // used in 'fade()'
+			if (!get_frame())					 // try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
 				continue;
-			mean_color_new = retrieve_pixel(mapped_subresource);
-			mean_color_new = fade(mean_color_new);
-			Pixel mean_color_gamma_corrected = gamma_correction(mean_color_new);
-			if (!send_data(mean_color_gamma_corrected)) {									// send data to micro controller
+			int i = 1; // Left side first
+			mean_color_new_l = retrieve_pixel(mapped_subresource, i);
+			mean_color_new_l = fade(mean_color_new_l, mean_color_old_l);
+			Pixel mean_color_gamma_corrected_l = gamma_correction(mean_color_new_l);
+			++i; // Right side second
+			mean_color_new_r = retrieve_pixel(mapped_subresource, i);
+			mean_color_new_r = fade(mean_color_new_r, mean_color_old_r);
+			Pixel mean_color_gamma_corrected_r = gamma_correction(mean_color_new_r);
+
+			if (!send_data(mean_color_gamma_corrected_l, mean_color_gamma_corrected_r)) {									// send data to micro controller
 				terminal_fill("Sending data to the micro controller failed!\r\tTrying to reconnect...\r", 12);
 				Sleep(5000);
 				connection_setup();
@@ -729,13 +703,20 @@ int main() {
 	terminal_fill("\n--- Starting continues analyzation ---\n\n");
 
 	while (true) {
-		mean_color_old = mean_color_new;						// used in 'fade()'
+		mean_color_old_l = mean_color_new_l;						// used in 'fade()'
+		mean_color_old_r = mean_color_new_r;						// used in 'fade()'
 		if (!get_frame()) 										// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
 			continue;
-		mean_color_new = retrieve_pixel(mapped_subresource);
-		mean_color_new = fade(mean_color_new);
-		Pixel mean_color_gamma_corrected = gamma_correction(mean_color_new);
-		if (!send_data(mean_color_gamma_corrected)) {			// send data to micro controller
+		int i = 1;													// Left side first
+		mean_color_new_l = retrieve_pixel(mapped_subresource, i);
+		mean_color_new_l = fade(mean_color_new_l, mean_color_old_l);
+		Pixel mean_color_gamma_corrected_l = gamma_correction(mean_color_new_l);
+		++i;														// Right side second
+		mean_color_new_r = retrieve_pixel(mapped_subresource, i);
+		mean_color_new_r = fade(mean_color_new_r, mean_color_old_r);
+		Pixel mean_color_gamma_corrected_r = gamma_correction(mean_color_new_r);
+
+		if (!send_data(mean_color_gamma_corrected_l, mean_color_gamma_corrected_r)) {			// send data to micro controller
 			terminal_fill("Error: Sending data to the micro controller failed!\r\tTrying to reconnect...\r", 12);
 			Sleep(5000);
 			connection_setup();
@@ -743,7 +724,7 @@ int main() {
 		}
 		// prints:
 		if (mapped_frames_counter % (fps + 1) == 0)
-			std::cout << "new_avg_pixel: " << mean_color_gamma_corrected.r << "r, " << mean_color_gamma_corrected.g << "g, " << mean_color_gamma_corrected.b << "b   \r";
+			std::cout << "new_avg_pixel_l: " << mean_color_gamma_corrected_l.r << "r, " << mean_color_gamma_corrected_l.g << "g, " << mean_color_gamma_corrected_l.b << "b, "   << mean_color_gamma_corrected_r.r << "r_r, " << mean_color_gamma_corrected_r.g << "g_r, " << mean_color_gamma_corrected_r.b << "b_r        \r";
 	}
 
 	std::cin.clear();
