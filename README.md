@@ -15,8 +15,10 @@ Keeping the CPU usage low was one of the goals, because gaming on my very own se
 A super low latency was important as well.
 
 ## Using the program aka finding your preferred config.-values: 
-Make sure to install an USB-driver for the arduino. In my case it's the CH340-driver.\
+Make sure to install an USB-driver for the arduino. In my case it's the CH340-driver for the super cheap Arduino-Nano-Clone.\
 Your computer recognizes the device? \
+Load "lumos_maxima.cpp" onto your Arduino. ("Old Bootloader for ATMega" works for the AN-Clone)
+
 Go ahead and run the program:
 ```
 Inserting higher saturation and brightness values in the setup will show you the current color accents of the screen. 
@@ -35,19 +37,20 @@ The presets were optimized for "Cat Quest 2"(video games) and animes.
     - [x] Write an extra gamma_correction() function. 
     - [x] Apply the gamma correction only while sending, not in retrieve_pixel(). 
 - [x] better USB-connection, e.g. detect disconnect and wait for re-connect
+    - [x] Resolved one issue: Can connect with any COM-port number below 1000 
 - [ ] Reinitialize enumerator and devices after device failure
 - [ ] Implement modes 
     - [ ] static light
     - [ ] standard light effects (rainbow, smooth, ...)
+        - [x] A fancy rainbow effect is the Arduino's default while the tool is not running. 
     - [ ] overall darken/brighten factor
 - [ ] Assign monitor areas to distinguished LEDs or LED-stripes (Ambilight(TM)-style)
     - [ ] monitor iterations can be split in different loops(/threads) 
     - [ ] re-write buffer-send
     - [ ] Arduino-script to distribute buffer-values to LEDs/stripes
-- [ ] Gamma-correction value shift and matched gamma-values for "night mode"
-- [x] (Think about image compression)
 - [ ] Turn the console application into a nice UI after the bachelor's thesis.
-    
+    - [ ] Gamma-correction value shift and matched gamma-values for "night mode"
+
 
 
 ## Appendix:
@@ -61,7 +64,6 @@ More features will come soon.
 
 
 ## Known issues:
-- It can only find a USB-port with a COM-port number below 10. Make sure to connect the arduino to the pc, not to a hub on a hub.
 - Rotated monitors won't get captured. I will re-read how to solve this issue. 
 - A lot of programs and games handle the DirectX full screen switch well enough to work with this program. But the following happens sometimes: \
 Switching from or to a fullscreen mode programm causes an access loss of the GPU-variables or it gets stuck in an windows-api-function. Restart the program and switch / 'Alt+Tab' back to the game within 5 seconds. This accounts to every display mode switch (change of resolution, lockscreen, changing games from window mode to fullscreen, ...).

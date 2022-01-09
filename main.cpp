@@ -51,8 +51,8 @@ UINT gNumFeatureLevels = ARRAYSIZE(gFeatureLevels);
 // Declaration of global variables:
 namespace screen_capture {
 	// main:
-	UINT sleepTimerMs = (int)(((float)1 / 33) * 1000);
-	UINT fps = 35;
+	static UINT sleepTimerMs = (int)(((float)1 / 33) * 1000);
+	static UINT fps = 35;
 	void set_sleepTimerMs(unsigned int& fps) { if (fps == 0) sleepTimerMs = 0; else sleepTimerMs = ((int)(((float)1 / fps) * 1000) - 1); }
 	HRESULT hr = E_FAIL;
 	// output_enumeration() + check_monitor_devices()
@@ -68,15 +68,15 @@ namespace screen_capture {
 	CComPtrCustom<ID3D11DeviceContext> context = nullptr;
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
 	// reject_sub_pixel()
-	UINT8 min_saturation_per_pixel = 18;							// optional accents: 60;
-	UINT8 min_brightness_per_pixel = 40;							//                  160;
+	static UINT8 min_saturation_per_pixel = 18;							// optional accents: 60;
+	static UINT8 min_brightness_per_pixel = 40;							//                  160;
 	// get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	D3D11_MAPPED_SUBRESOURCE mapped_subresource;
 	// benchmark
-	int mapped_frames_counter = 0;
+	static int mapped_frames_counter = 0;
 	// arduino connection 
-	const char serial_port[] = { 'C', 'O', 'M', '7' };			    // usb port name 
+	const char* serial_port = "COM7"; //{ 'C', 'O', 'M', '7' };			    // usb port name 
 	Serial* SP;
 	// led_stuff:
 	struct Pixel {
@@ -90,23 +90,43 @@ namespace screen_capture {
 	Pixel mean_color_old;
 	Pixel mean_color_new;
 
-	const uint8_t gamma8[] = {
-					0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-					0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,
-					1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,
-					2,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  5,  5,  5,
-					5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9, 10,
-					10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14, 14, 15, 15, 16, 16,
-					17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25,
-					25, 26, 27, 27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36,
-					37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,
-					52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68,
-					69, 70, 72, 73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89,
-					90, 92, 93, 95, 96, 98, 99,101,102,104,105,107,109,110,112,114,
-					115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,
-					144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,
-					177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
-					215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
+	const uint8_t gamma8[256] = {
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   1,   1,
+			1,   1,   1,   1,   1,   1,   1,   1,   1,   2,   2,   2,   2,   2,   2,   2,
+			2,   3,   3,   3,   3,   3,   3,   4,   4,   4,   4,   4,   4,   5,   5,   5,
+			5,   6,   6,   6,   6,   7,   7,   7,   7,   8,   8,   8,   9,   9,   9,   10,
+			10,  10,  11,  11,  11,  12,  12,  13,  13,  13,  14,  14,  15,  15,  16,  16,
+			17,  17,  18,  18,  19,  19,  20,  20,  21,  21,  22,  22,  23,  24,  24,  25,
+			25,  26,  27,  27,  28,  29,  29,  30,  31,  32,  32,  33,  34,  35,  35,  36,
+			37,  38,  39,  39,  40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  50,  51,
+			52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,  66,  67,  68,
+			69,  70,  72,  73,  74,  75,  77,  78,  79,  81,  82,  83,  85,  86,  87,  89,
+			90,  92,  93,  95,  96,  98,  99,  101, 102, 104, 105, 107, 109, 110, 112, 114,
+			115, 117, 119, 120, 122, 124, 126, 127, 129, 131, 133, 135, 137, 138, 140, 142,
+			144, 146, 148, 150, 152, 154, 156, 158, 160, 162, 164, 167, 169, 171, 173, 175,
+			177, 180, 182, 184, 186, 189, 191, 193, 196, 198, 200, 203, 205, 208, 210, 213,
+			215, 218, 220, 223, 225, 228, 231, 233, 236, 239, 241, 244, 247, 249, 250, 255};
+
+	const uint8_t gamma8_neo_pixel[256] = {
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   1,   1,
+			1,   1,   1,   1,   1,   1,   2,   2,   2,   2,   2,   2,   2,   2,   3,
+			3,   3,   3,   3,   3,   4,   4,   4,   4,   5,   5,   5,   5,   5,   6,
+			6,   6,   6,   7,   7,   7,   8,   8,   8,   9,   9,   9,   10,  10,  10,
+			11,  11,  11,  12,  12,  13,  13,  13,  14,  14,  15,  15,  16,  16,  17,
+			17,  18,  18,  19,  19,  20,  20,  21,  21,  22,  22,  23,  24,  24,  25,
+			25,  26,  27,  27,  28,  29,  29,  30,  31,  31,  32,  33,  34,  34,  35,
+			36,  37,  38,  38,  39,  40,  41,  42,  42,  43,  44,  45,  46,  47,  48,
+			49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,
+			64,  65,  66,  68,  69,  70,  71,  72,  73,  75,  76,  77,  78,  80,  81,
+			82,  84,  85,  86,  88,  89,  90,  92,  93,  94,  96,  97,  99,  100, 102,
+			103, 105, 106, 108, 109, 111, 112, 114, 115, 117, 119, 120, 122, 124, 125,
+			127, 129, 130, 132, 134, 136, 137, 139, 141, 143, 145, 146, 148, 150, 152,
+			154, 156, 158, 160, 162, 164, 166, 168, 170, 172, 174, 176, 178, 180, 182,
+			184, 186, 188, 191, 193, 195, 197, 199, 202, 204, 206, 209, 211, 213, 215,
+			218, 220, 223, 225, 227, 230, 232, 235, 237, 240, 242, 245, 247, 250, 252, 
+			255};
 };
 using namespace screen_capture;
 //#############################################################################################
@@ -436,11 +456,13 @@ bool get_frame() {
  * @return true, if pixel is too dark or too white and needs to be ignored.
 */
 bool reject_sub_pixel(Pixel& curr_pixel) {
-	if (min_brightness_per_pixel == 0 && min_saturation_per_pixel == 0)
+	if ((min_brightness_per_pixel == 0) & (min_saturation_per_pixel == 0))
 		return false;
 	else
-		return ( ((curr_pixel.b < min_brightness_per_pixel) && (curr_pixel.g < min_brightness_per_pixel) && (curr_pixel.r < min_brightness_per_pixel)) || ((abs(curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) && (abs(curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel)));
+		return (((curr_pixel.b < min_brightness_per_pixel) * (curr_pixel.g < min_brightness_per_pixel) * (curr_pixel.r < min_brightness_per_pixel)) | 
+				((abs(curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) * (abs(curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel) * (abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel)));
 }
+
 
 /**
  * @brief retrieve pixel data and calculate the mean of the latest frame directly
@@ -461,9 +483,9 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
 
 	accum_pixel = { 0, 0, 0 };
 	int pixel_amount = 0;
-	for (UINT row = 0; row < height; row = row + 3) {							    // +2 instead of ++ drops half the resolution
-		UINT row_start = row * mapped_subresource.RowPitch / 4;
-		for (UINT col = 0; col < width; col = col + 2) {						    // col + quality_loss 
+	for (UINT row = 0; row < height; row += 3) {							    // +2 instead of ++ drops half the resolution
+		UINT row_start = row * mapped_subresource.RowPitch / 4;						// usually it's RGBA but we only care for rgb, 'cause a is alwys 255
+		for (UINT col = 0; col < width; col += 2) {						    // col + quality_loss 
 
 			curr_pixel.b = pixel_array_source[row_start + col * 4 + 0];             // first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
 			curr_pixel.g = pixel_array_source[row_start + col * 4 + 1];
@@ -480,15 +502,17 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
 		}
 	}
 
-	if (pixel_amount == 0)															// avert division by zero 
+	if (pixel_amount == 0) {															// avert division by zero 
 		mean_pixel = mean_color_old;												// ..mh nothing found, let's send old frame and fade once more..
+		return mean_pixel;
 		//return mean_pixel = { 0, 0, 0 };											// send_data(): does nothing, if 'black'
 		//return mean_pixel = {10, 0, 30};											// Default lila for dark scenes
+	}
 
 	mean_pixel = {    //gamma adjustment
-		accum_pixel.b == 0 ? 0 : (accum_pixel.b / pixel_amount + 1/*+ (accum_pixel.b % pixel_amount != 0)*/),		// commented additions: integer ceiling
-		accum_pixel.g == 0 ? 0 : (accum_pixel.g / pixel_amount + 1/*+ (accum_pixel.g % pixel_amount != 0)*/),		
-		accum_pixel.r == 0 ? 0 : (accum_pixel.r / pixel_amount + 1/*+ (accum_pixel.r % pixel_amount != 0)*/),
+		accum_pixel.b == 0 ? 0 : (accum_pixel.b / pixel_amount/*+ (accum_pixel.b % pixel_amount != 0)*/),		// commented additions: integer ceiling
+		accum_pixel.g == 0 ? 0 : (accum_pixel.g / pixel_amount/*+ (accum_pixel.g % pixel_amount != 0)*/),		
+		accum_pixel.r == 0 ? 0 : (accum_pixel.r / pixel_amount/*+ (accum_pixel.r % pixel_amount != 0)*/),
 	};
 
 	return mean_pixel;
@@ -500,6 +524,7 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource) {
  * @return mean_pixel_fade the faded color
  */
 Pixel fade(Pixel& pixel) {
+	int8_t inv_fade_val = 256 - fade_val;
 	Pixel pixel_faded = {
 		(pixel.b * (256 - fade_val) + mean_color_old.b * fade_val) >> 8,
 		(pixel.g * (256 - fade_val) + mean_color_old.g * fade_val) >> 8,
@@ -515,17 +540,17 @@ Pixel fade(Pixel& pixel) {
  * @return Pixel after gamma_correction 
  */
 Pixel gamma_correction(Pixel& pixel){
-	Pixel pixel_gamma_corrected = {
-		gamma8[pixel.b == 0 ? 0 : pixel.b - (pixel.b / 3)],		// blue is a bit too intense with WS2812b ICs on 5050LEDs
-		gamma8[pixel.g == 0 ? 0 : pixel.g - (pixel.g / 10)],	// and green is intense for the eyes 
-		gamma8[pixel.r - 1] + 1									// always a little red
+	Pixel pixel_gamma_corrected = {														// TODO: use a gamma correction tabel with distinguished values for each color channel
+		gamma8_neo_pixel[pixel.b == 0 ? 0 : (int)ceil(pixel.b - (pixel.b / 3.))],		// blue is a bit too intense with WS2812b ICs on 5050LEDs
+		gamma8_neo_pixel[pixel.g == 0 ? 0 : (int)ceil(pixel.g - (pixel.g / 15.))],		// and green is intense for the eyes 
+		gamma8_neo_pixel[pixel.r]														// red stays the same
 	};
 
 	return pixel_gamma_corrected;
 }
 
 // true gamme correction:
-// TODO
+// TODO:
 #if 0
 std::vector<std::vector<uint8_t>> setup_gamma() {
 	std::vector<std::vector<uint8_t>> gamma(256, std::vector<uint8_t>(3, 0));
@@ -536,6 +561,7 @@ std::vector<std::vector<uint8_t>> setup_gamma() {
 		gamma[i][1] = (uint8_t)(f * 240.);
 		gamma[i][2] = (uint8_t)(f * 220.);
 	}
+
 	return gamma;
 }
 #endif
@@ -547,21 +573,27 @@ std::vector<std::vector<uint8_t>> setup_gamma() {
 bool connection_setup() {
 	terminal_fill("\nTrying to connect with the LED controller\n\t...\n");
  
+	/**
 	SP = new Serial(serial_port);				// try my own default USB-port first
 	if (SP->IsConnected()) {
 		terminal_fill("Connection established! Let in the light!\n");
 		return SP->IsConnected();
 	}
-	
-	for (int i = 0; i < 10; ++i) {				// now every other Port from 0 to 9
-		std::string s = "COM";
-		s.push_back((char)(i + 48));
+	*/
+
+	std::string s = "COM0";
+	for (int i = 0; i < 1000; ++i) {				// now every other Port from 0 to 30
+		if (i < 10)
+			s[3] = (char)(i+48);
+		else
+			s = "\\\\.\\COM" + std::to_string(i);
 		const char* c = s.c_str();
 		SP = new Serial(c);
 		if (SP->IsConnected()) {
 			terminal_fill("Connection established! Let in the light!\n");
 			break;
 		}
+		delete SP;
 	}
 	return SP->IsConnected();
 }
@@ -592,13 +624,13 @@ bool setup_and_benchmark() {
 	if (bench != "y") {
 		if (!connection_setup())
 			return false;
-		Sleep(4500);
+		Sleep(5000);
 		create_and_get_device(chosen_output_num);		 	// not finished... how do i pass a specific device+monitor to CreateDevice() for different grakas and rotations?
 		return true;
 	}
 	if (!connection_setup())
 		return false;
-	Sleep(1000);
+	Sleep(3000);
 	create_and_get_device(chosen_output_num);
 
 	terminal_fill("I will run a test for 50 seconds, now.\n", 14);
@@ -623,14 +655,13 @@ bool setup_and_benchmark() {
 			mean_color_new = fade(mean_color_new);
 			Pixel mean_color_gamma_corrected = gamma_correction(mean_color_new);
 			if (!send_data(mean_color_gamma_corrected)) {									// send data to micro controller
-				terminal_fill("Sending data to the micro controller failed!\n\tTrying to reconnect...\n", 12);
+				terminal_fill("Sending data to the micro controller failed!\r\tTrying to reconnect...\r", 12);
 				Sleep(5000);
 				connection_setup();
 				Sleep(5000);
 			}
 			++get_frame_call;
 		}
-		terminal_fill("I looped exactly " + std::to_string(get_frame_call) + " times.\n", 14);
 		terminal_fill("I captured: ~" + std::to_string(get_frame_call / 10) + " fps.\n", 14);
 	}
 	set_sleepTimerMs(user_fps); 		// reset
@@ -704,8 +735,8 @@ int main() {
 		mean_color_new = retrieve_pixel(mapped_subresource);
 		mean_color_new = fade(mean_color_new);
 		Pixel mean_color_gamma_corrected = gamma_correction(mean_color_new);
-		if (!send_data(mean_color_gamma_corrected)) {		// send data to micro controller
-			terminal_fill("Error: Sending data to the micro controller failed!\n\tTrying to reconnect...\n", 12);
+		if (!send_data(mean_color_gamma_corrected)) {			// send data to micro controller
+			terminal_fill("Error: Sending data to the micro controller failed!\r\tTrying to reconnect...\r", 12);
 			Sleep(5000);
 			connection_setup();
 			Sleep(5000);

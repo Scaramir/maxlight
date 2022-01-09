@@ -11,18 +11,18 @@
 // Just use a WS2812b, an arduino and a compatible power supply.
 // For led strips consuming <= 15W, you can solder the 5v wire of the usb cable directly
 //  to the board and make use of power share (BIOS and Motherboard dependable)
-// Costs: max.: 45€ for 5m 
+// Costs: max.: 45€ for 5m
 
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
-  #include <avr/power.h>   // Required for 16 MHz Adafruit Trinket
+  #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
 #endif
 
 // Which pin on the Arduino is connected to the strip?
-#define LED_PIN    6
+#define LED_PIN 6
 
 // How many LEDs are attached to the Arduino?
-#define LED_COUNT 150 
+#define LED_COUNT 150
 
 // Declare our NeoPixel strip object:
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -31,72 +31,106 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 // Argument 3 = Pixel type flags, add together as needed:
 
 const int buffer_size = 5;
-uint8_t buffer[buffer_size];         //+2, 'cause "mo" is the header
+uint8_t buffer[buffer_size]; //+2, 'cause "mo" is the header
 uint8_t buffer_old[buffer_size];
 uint8_t buffer_tmp[buffer_size];
 int index = 0;
 int min_bright = 0;
-int parts = 7;
-
+bool usb_usage = 0;
 
 // setup() function -- runs once at startup --------------------------------
 void setup() {
   #if 1
-    // These lines are specifically to support the Adafruit Trinket 5V 16 MHz.
-    // Any other board, you can remove this part (but no harm leaving it):
-    #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
-      clock_prescale_set(clock_div_1);
-    #endif
+  // These lines are specifically to support the Adafruit Trinket 5V 16 MHz.
+  // Any other board, you can remove this part (but no harm leaving it):
+  #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
+    clock_prescale_set(clock_div_1);
+  #endif
     // END of Trinket-specific code.
   #endif
 
-    strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
-    strip.setBrightness(255);
-    for (uint16_t i = 0; i < LED_COUNT; ++i) {
-        strip.setPixelColor(i, strip.Color(255, 0, 0));
-        strip.show();
-        delay(15);
-    }
-    for (uint16_t i = 0; i <= 255; ++i){
-      strip.fill(strip.Color(255, 0, i), 0, LED_COUNT);
-      strip.show();
-      delay(15);
-    }
-    
-    Serial.begin(2000000);      // Check max. value for your usb-port (C340: 2M)
-    Serial.print("ml");      	// Send string to host 
-    
-    strip.fill((strip.Color(0, 0, 0), 0, LED_COUNT));
-    strip.clear();
+  strip.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
+  strip.setBrightness(255);
+
+  strip.fill(strip.Color(255, 0, 0), 0, 6);
+  for (uint16_t i = 5; i < LED_COUNT; ++i) {
+    strip.setPixelColor(i, strip.Color(100, 0, 255));
+    strip.setPixelColor(i - 1, strip.Color(150, 0, 180));
+    strip.setPixelColor(i - 2, strip.Color(200, 0, 150));
+    strip.setPixelColor(i - 3, strip.Color(255, 0, 100));
+    strip.setPixelColor(i - 4, strip.Color(255, 0, 70));
+    strip.setPixelColor(i - 5, strip.Color(255, 0, 0));
     strip.show();
+    delay(25);
+  }
+
+  for (uint16_t i = 0; i <= 255; ++i) {
+    strip.fill(strip.Color(255, 0, i), 0, LED_COUNT);
+    strip.show();
+    delay(8);
+  }
+
+  Serial.begin(2000000); // Check max. value for your usb-port (C340: 2M)
+  Serial.print("ml");    // Send string to host
+
+  strip.fill((strip.Color(0, 0, 0), 0, LED_COUNT));
+  strip.clear();
+  strip.show();
 }
 
 // loop() function -- runs repeatedly as long as board is on ---------------
 void loop() {
 
   if (Serial.available() > 0) {
+    usb_usage = 1;
     buffer[index++] = Serial.read();
     if (index >= buffer_size) {
       index = 0;
       if (buffer[0] == 'm' && buffer[1] == 'o') {
-        #if 0
-        min_bright = buffer[2]+buffer[3]+buffer[4] - 120;
-        if (min_bright <= 1) {
-          if ( buffer[2] < 40 && buffer[3] < 40 && buffer[4] < 40) 
-            strip.fill(strip.Color(buffer[2] << 1, buffer[3] << 1, buffer[4] << 1), 0, LED_COUNT/*i * LED_COUNT/parts, LED_COUNT/parts*/);
-          else
-            strip.fill(strip.Color(buffer[2] + (buffer[2]>>1), buffer[3] + (buffer[3]>>1), buffer[4] + (buffer[4]>>1)), 0, LED_COUNT/*i * LED_COUNT/parts, LED_COUNT/parts*/);
-        } else {
-          strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, LED_COUNT);
-        }
-        #endif
-        
-        strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, 99);
-        strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 102, LED_COUNT);
-        
+        strip.fill(strip.Color(0, 0, 0), 0, LED_COUNT);
+        strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, 115);
+        strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 117, LED_COUNT - 116);
+
         strip.show();
       }
     }
   }
 
+  if (usb_usage == 0) {
+    rainbow(40);
+  }
+}
+
+// Rainbow cycle along whole strip. Pass delay time (in ms) between frames.
+// This is a minimal modified sample code of Adafruit's rainbow() function. 
+void rainbow(int wait)
+{
+  // Hue of first pixel runs 5 complete loops through the color wheel.
+  // Color wheel has a range of 65536 but it's OK if we roll over, so
+  // just count from 0 to 5*65536. Adding 256 to firstPixelHue each time
+  // means we'll make 5*65536/256 = 1280 passes through this outer loop:
+  for (long firstPixelHue = 0; firstPixelHue < 5 * 65536; firstPixelHue += 100)
+  { // 256
+    for (int i = 0; i < strip.numPixels(); i++) { // For each pixel in strip...
+      if (Serial.available() > 0) {
+        return;
+      }
+      if (i == 115 || i == 116) {
+        strip.setPixelColor(i, strip.Color(0, 0, 0));
+        continue;
+      }
+      // Offset pixel hue by an amount to make one full revolution of the
+      // color wheel (range of 65536) along the length of the strip
+      // (strip.numPixels() steps):
+      int pixelHue = firstPixelHue + (i * 65536L / strip.numPixels());
+      // strip.ColorHSV() can take 1 or 3 arguments: a hue (0 to 65535) or
+      // optionally add saturation and value (brightness) (each 0 to 255).
+      // Here we're using just the single-argument hue variant. The result
+      // is passed through strip.gamma32() to provide 'truer' colors
+      // before assigning to each pixel:
+      strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
+    }
+    strip.show(); // Update strip with new contents
+    delay(wait);  // Pause for a moment
+  }
 }
