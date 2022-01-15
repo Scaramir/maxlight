@@ -8,8 +8,6 @@
  * @copyright Copyright (c) 2021
  * 
  */
-
-
 #include <iostream>
 #include <sstream> 
 #include <dxgi1_2.h>        // include-order
@@ -81,9 +79,9 @@ namespace screen_capture {
 	// led_stuff:
 	struct Pixel {
 	public:
-		int b = 0;	                   								// initialized to 'black'; 
-		int g = 0;
-		int r = 0;
+		int32_t b = 0;	                   								// initialized to 'black'; 
+		int32_t g = 0;
+		int32_t r = 0;
 	};
 	// fade:
 	int fade_val = 90;												// default value
@@ -155,7 +153,7 @@ int output_enumeration(int16_t& i) {
 		if (SUCCEEDED(hr)) {				// print info
 			wprintf(L"\t\tMonitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'Y' : 'n');
 			std::cout << "\t\twith the following dimensions:\n\t\t " <<
-			    abs(abs((int)desc.DesktopCoordinates.right) - abs((int)desc.DesktopCoordinates.left)) <<
+				abs(abs((int)desc.DesktopCoordinates.right) - abs((int)desc.DesktopCoordinates.left)) <<
 				" x " <<
 				abs(abs((int)desc.DesktopCoordinates.top) - abs((int)desc.DesktopCoordinates.bottom)) <<
 				" pixel" << "\n";
@@ -387,7 +385,7 @@ bool get_frame() {
 	// this value is specific for my system 
 	// just give it some extra ms
 
-    //get accumulated frames
+	//get accumulated frames
 	hr = desktop_duplication->AcquireNextFrame(8, &frame_info, &frame); // win desktop duplication apis' core function
 	if (hr == DXGI_ERROR_INVALID_CALL) {
 		return false;
@@ -432,13 +430,16 @@ bool get_frame() {
  * @param curr_pixel
  * @return true, if pixel is too dark or too white and needs to be ignored.
 */
-bool reject_sub_pixel(Pixel& curr_pixel) {
+bool reject_sub_pixel(const Pixel& curr_pixel) {
 	if ((min_brightness_per_pixel == 0) & (min_saturation_per_pixel == 0))
 		return false;
+	else if ((curr_pixel.b + curr_pixel.g + curr_pixel.r < min_brightness_per_pixel))
+		return true;
+	else if ((abs(curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) * (abs(curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel) * (abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel))
+		return true;
 	else
-		return (((curr_pixel.b < min_brightness_per_pixel) * (curr_pixel.g < min_brightness_per_pixel) * (curr_pixel.r < min_brightness_per_pixel)) | 
-				((abs(curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) * (abs(curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel) * (abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel)));
-}
+		return false;
+}	
 
 
 /**
@@ -447,47 +448,46 @@ bool reject_sub_pixel(Pixel& curr_pixel) {
  * @param side: '1' for left side, '2' for right side
  * @return new_pixel mean b,g,r,a values of the current frame
  */
-Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, int& side) {
+Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& side) {
 	// point to bytes/values of pixel data 
 	uint8_t* pixel_array_source = static_cast<uint8_t*>(mapped_subresource.pData);
 
-	Pixel curr_pixel;
-	Pixel accum_pixel;
-	Pixel mean_pixel;
+	int16_t curr_b = 0;
+	int16_t curr_g = 0;
+	int16_t curr_r = 0;
+	Pixel accum_pixel = { 0, 0, 0 };
+	Pixel mean_pixel = { 0, 0, 0 };
+	uint32_t curr_pixel_position;
 
-	accum_pixel = { 0, 0, 0 };
 	int pixel_amount = 0;
-	for (UINT row = 0; row < texture_desc.Height; row += 3) {							    // +2 instead of ++ drops half the resolution
-		UINT row_start = row * mapped_subresource.RowPitch;						//  usually it's RGBA(unsigned Char) but we only care for rgb, 'cause a is alwys 255, 
-		UINT col_start = (side == 1) ? 0 : (texture_desc.Width/2);
-		UINT col_end = (side == 1) ? (texture_desc.Width / 2) : texture_desc.Width;
-		for (col_start; col_start < col_end; col_start += 3) {						    // col + quality_loss 
-			curr_pixel.b = pixel_array_source[row_start + col_start * 4 + 0];             // first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
-			curr_pixel.g = pixel_array_source[row_start + col_start * 4 + 1];
-			curr_pixel.r = pixel_array_source[row_start + col_start * 4 + 2];
+	for (int32_t row = 0; row < texture_desc.Height; row += 2) {												// +2 instead of ++ drops half the resolution
+		uint32_t row_start = row * mapped_subresource.RowPitch;													//  usually it's RGBA(unsigned Char) but we only care for rgb, 'cause a is alwys 255, 
+		uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 7;					//middle overlap 
+		uint32_t col_end = (side == 1) ? (texture_desc.Width / 2) + texture_desc.Width / 7 : texture_desc.Width;
+		for (col_start; col_start < col_end; col_start += 3) {												// col + quality_loss 
+			curr_pixel_position = row_start + (col_start * 4);
+			curr_b = pixel_array_source[curr_pixel_position];												// first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
+			curr_g = pixel_array_source[curr_pixel_position + 1];
+			curr_r = pixel_array_source[curr_pixel_position + 2];
 
-			if (reject_sub_pixel(curr_pixel))
+			if (reject_sub_pixel({curr_b, curr_g, curr_r}))
 				continue;
 
-			accum_pixel.b += curr_pixel.b;
-			accum_pixel.g += curr_pixel.g;
-			accum_pixel.r += curr_pixel.r;
+			accum_pixel.b += curr_b;
+			accum_pixel.g += curr_g;
+			accum_pixel.r += curr_r;
 
 			++pixel_amount;
 		}
-		if (row == texture_desc.Height - 500)
-			continue;
 	}
 
-	if (pixel_amount == 0) {															// avert division by zero 
-		mean_pixel = (side == 1) ? mean_color_old_l : mean_color_old_r;												// ..mh nothing found, let's send old frame and fade once more..
+	if (pixel_amount == 0) {																				// avert division by zero 
+		mean_pixel = (side == 1) ? mean_color_old_l : mean_color_old_r;										// ..mh nothing found, let's send old frame and fade once more..
 		return mean_pixel;
-		//return mean_pixel = { 0, 0, 0 };											// send_data(): does nothing, if 'black'
-		//return mean_pixel = {10, 0, 30};											// Default lila for dark scenes
 	}
 
 	mean_pixel = {    //gamma adjustment
-		accum_pixel.b == 0 ? 0 : (accum_pixel.b / pixel_amount/*+ (accum_pixel.b % pixel_amount != 0)*/),		// commented additions: integer ceiling
+		accum_pixel.b == 0 ? 0 : (accum_pixel.b / pixel_amount/*+ (accum_pixel.b % pixel_amount != 0)*/),	// commented additions: integer ceiling
 		accum_pixel.g == 0 ? 0 : (accum_pixel.g / pixel_amount/*+ (accum_pixel.g % pixel_amount != 0)*/),		
 		accum_pixel.r == 0 ? 0 : (accum_pixel.r / pixel_amount/*+ (accum_pixel.r % pixel_amount != 0)*/),
 	};
@@ -573,8 +573,6 @@ bool connection_setup() {
  * @return true, if send_data() worked or frame was 'black'.
  */
 bool send_data(Pixel& pixel_l, Pixel& pixel_r) {
-	if ((pixel_l.r == 0) & (pixel_l.g == 0) & (pixel_l.b == 0) & (pixel_r.r == 0) & (pixel_r.g == 0) & (pixel_r.b == 0))
-		return true;
 	uint8_t buffer[8] = { 'm', 'o', (uint8_t)pixel_l.r, (uint8_t)pixel_l.g, (uint8_t)pixel_l.b, (uint8_t)pixel_r.r, (uint8_t)pixel_r.g, (uint8_t)pixel_r.b };
 	return SP->WriteData(buffer, 8 /*sizeof(buffer)*/);
 }
@@ -707,12 +705,12 @@ int main() {
 		mean_color_old_r = mean_color_new_r;						// used in 'fade()'
 		if (!get_frame()) 										// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
 			continue;
-		int i = 1;													// Left side first
-		mean_color_new_l = retrieve_pixel(mapped_subresource, i);
+		// Left side first
+		mean_color_new_l = retrieve_pixel(mapped_subresource, 1);
 		mean_color_new_l = fade(mean_color_new_l, mean_color_old_l);
 		Pixel mean_color_gamma_corrected_l = gamma_correction(mean_color_new_l);
-		++i;														// Right side second
-		mean_color_new_r = retrieve_pixel(mapped_subresource, i);
+		// Right side
+		mean_color_new_r = retrieve_pixel(mapped_subresource, 2);
 		mean_color_new_r = fade(mean_color_new_r, mean_color_old_r);
 		Pixel mean_color_gamma_corrected_r = gamma_correction(mean_color_new_r);
 
