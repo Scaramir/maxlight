@@ -79,9 +79,9 @@ namespace screen_capture {
 	// led_stuff:
 	struct Pixel {
 	public:
-		int32_t b = 0;	                   								// initialized to 'black'; 
-		int32_t g = 0;
-		int32_t r = 0;
+		uint8_t b = 0;	                   								// initialized to 'black'; 
+		uint8_t g = 0;
+		uint8_t r = 0;
 	};
 	// fade:
 	int fade_val = 90;												// default value
@@ -452,20 +452,23 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 	// point to bytes/values of pixel data 
 	uint8_t* pixel_array_source = static_cast<uint8_t*>(mapped_subresource.pData);
 
-	int16_t curr_b = 0;
-	int16_t curr_g = 0;
-	int16_t curr_r = 0;
-	Pixel accum_pixel = { 0, 0, 0 };
-	Pixel mean_pixel = { 0, 0, 0 };
+	uint8_t curr_b = 0;
+	uint8_t curr_g = 0;
+	uint8_t curr_r = 0;
+	uint32_t accum_pixel_b = 0;
+	uint32_t accum_pixel_g = 0;
+	uint32_t accum_pixel_r = 0;
+	Pixel mean_pixel = {0, 0, 0};
 	uint32_t curr_pixel_position;
 
-	int pixel_amount = 0;
-	for (int32_t row = 0; row < texture_desc.Height; row += 2) {												// +2 instead of ++ drops half the resolution
+	uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 7;					//middle overlap 
+	uint32_t col_end = (side == 1) ? (texture_desc.Width / 2) + texture_desc.Width / 7 : texture_desc.Width;
+
+	uint32_t pixel_amount = 0;
+	for (uint32_t row = 0; row < texture_desc.Height; row += 2) {												// +2 instead of ++ drops half the resolution
 		uint32_t row_start = row * mapped_subresource.RowPitch;													//  usually it's RGBA(unsigned Char) but we only care for rgb, 'cause a is alwys 255, 
-		uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 7;					//middle overlap 
-		uint32_t col_end = (side == 1) ? (texture_desc.Width / 2) + texture_desc.Width / 7 : texture_desc.Width;
-		for (col_start; col_start < col_end; col_start += 3) {												// col + quality_loss 
-			curr_pixel_position = row_start + (col_start * 4);
+		for (uint32_t curr_col = col_start; curr_col < col_end; curr_col += 3) {												// col + quality_loss 
+			curr_pixel_position = row_start + (curr_col *4);
 			curr_b = pixel_array_source[curr_pixel_position];												// first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
 			curr_g = pixel_array_source[curr_pixel_position + 1];
 			curr_r = pixel_array_source[curr_pixel_position + 2];
@@ -473,9 +476,9 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 			if (reject_sub_pixel({curr_b, curr_g, curr_r}))
 				continue;
 
-			accum_pixel.b += curr_b;
-			accum_pixel.g += curr_g;
-			accum_pixel.r += curr_r;
+			accum_pixel_b += curr_b;
+			accum_pixel_g += curr_g;
+			accum_pixel_r += curr_r;
 
 			++pixel_amount;
 		}
@@ -487,9 +490,9 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 	}
 
 	mean_pixel = {    //gamma adjustment
-		accum_pixel.b == 0 ? 0 : (accum_pixel.b / pixel_amount/*+ (accum_pixel.b % pixel_amount != 0)*/),	// commented additions: integer ceiling
-		accum_pixel.g == 0 ? 0 : (accum_pixel.g / pixel_amount/*+ (accum_pixel.g % pixel_amount != 0)*/),		
-		accum_pixel.r == 0 ? 0 : (accum_pixel.r / pixel_amount/*+ (accum_pixel.r % pixel_amount != 0)*/),
+		accum_pixel_b == (uint8_t)0 ? (uint8_t)0 : (uint8_t)(accum_pixel_b / pixel_amount),
+		accum_pixel_g == (uint8_t)0 ? (uint8_t)0 : (uint8_t)(accum_pixel_g / pixel_amount),
+		accum_pixel_r == (uint8_t)0 ? (uint8_t)0 : (uint8_t)(accum_pixel_r / pixel_amount),
 	};
 
 	return mean_pixel;
@@ -500,8 +503,8 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
  * @param mean_pixel_new the new average color
  * @return mean_pixel_fade the faded color
  */
-Pixel fade(Pixel& pixel, Pixel& mean_color_old) {
-	int16_t inv_fade_val = 256 - fade_val;
+Pixel fade(const Pixel& pixel, const Pixel& mean_color_old) {
+	uint8_t inv_fade_val = 256 - fade_val;
 	Pixel pixel_faded = {
 		(pixel.b * (inv_fade_val) + mean_color_old.b * fade_val) >> 8,
 		(pixel.g * (inv_fade_val) + mean_color_old.g * fade_val) >> 8,
@@ -516,7 +519,7 @@ Pixel fade(Pixel& pixel, Pixel& mean_color_old) {
  * @param pixel 
  * @return Pixel after gamma_correction 
  */
-Pixel gamma_correction(Pixel& pixel){
+Pixel gamma_correction(const Pixel& pixel){
 	Pixel pixel_gamma_corrected = {														// TODO: use a gamma correction tabel with distinguished values for each color channel
 		gamma8_neo_pixel[pixel.b == 0 ? 0 : (int)ceil(pixel.b - (pixel.b / 5.))],		// blue is a bit too intense with WS2812b ICs on 5050LEDs
 		gamma8_neo_pixel[pixel.g == 0 ? 0 : (int)ceil(pixel.g - (pixel.g / 17.))],		// and green is intense for the eyes 
@@ -572,8 +575,8 @@ bool connection_setup() {
  * @param pixel, the new color values to be sent.
  * @return true, if send_data() worked or frame was 'black'.
  */
-bool send_data(Pixel& pixel_l, Pixel& pixel_r) {
-	uint8_t buffer[8] = { 'm', 'o', (uint8_t)pixel_l.r, (uint8_t)pixel_l.g, (uint8_t)pixel_l.b, (uint8_t)pixel_r.r, (uint8_t)pixel_r.g, (uint8_t)pixel_r.b };
+bool send_data(const Pixel& pixel_l, const Pixel& pixel_r) {
+	uint8_t buffer[8] = { 'm', 'o', pixel_l.r, pixel_l.g, pixel_l.b, pixel_r.r, pixel_r.g, pixel_r.b };
 	return SP->WriteData(buffer, 8 /*sizeof(buffer)*/);
 }
 
@@ -722,7 +725,7 @@ int main() {
 		}
 		// prints:
 		if (mapped_frames_counter % (fps + 1) == 0)
-			std::cout << "new_avg_pixel_l: " << mean_color_gamma_corrected_l.r << "r, " << mean_color_gamma_corrected_l.g << "g, " << mean_color_gamma_corrected_l.b << "b, "   << mean_color_gamma_corrected_r.r << "r_r, " << mean_color_gamma_corrected_r.g << "g_r, " << mean_color_gamma_corrected_r.b << "b_r      \r";
+			std::cout << "new_avg_pixel_l: " << (int)mean_color_gamma_corrected_l.r << "r, " << (int)mean_color_gamma_corrected_l.g << "g, " << (int)mean_color_gamma_corrected_l.b << "b, " << (int)mean_color_gamma_corrected_r.r << "r_r, " << (int)mean_color_gamma_corrected_r.g << "g_r, " << (int)mean_color_gamma_corrected_r.b << "b_r      \r";
 	}
 
 	std::cin.clear();
