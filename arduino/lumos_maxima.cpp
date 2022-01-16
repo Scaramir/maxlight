@@ -15,7 +15,7 @@
 
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
-  #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
+#include <avr/power.h> // Required for 16 MHz Adafruit Trinket
 #endif
 
 // Which pin on the Arduino is connected to the strip?
@@ -30,7 +30,7 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 // Argument 2 = Arduino pin number (most are valid)
 // Argument 3 = Pixel type flags, add together as needed:
 
-const int buffer_size = 5;
+const int buffer_size = 8;
 uint8_t buffer[buffer_size]; //+2, 'cause "mo" is the header
 uint8_t buffer_old[buffer_size];
 uint8_t buffer_tmp[buffer_size];
@@ -39,21 +39,23 @@ int min_bright = 0;
 bool usb_usage = 0;
 
 // setup() function -- runs once at startup --------------------------------
-void setup() {
-  #if 1
-  // These lines are specifically to support the Adafruit Trinket 5V 16 MHz.
-  // Any other board, you can remove this part (but no harm leaving it):
-  #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
-    clock_prescale_set(clock_div_1);
-  #endif
-    // END of Trinket-specific code.
-  #endif
+void setup()
+{
+#if 1
+// These lines are specifically to support the Adafruit Trinket 5V 16 MHz.
+// Any other board, you can remove this part (but no harm leaving it):
+#if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
+  clock_prescale_set(clock_div_1);
+#endif
+  // END of Trinket-specific code.
+#endif
 
   strip.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
   strip.setBrightness(255);
 
   strip.fill(strip.Color(255, 0, 0), 0, 6);
-  for (uint16_t i = 5; i < LED_COUNT; ++i) {
+  for (uint16_t i = 5; i < LED_COUNT; ++i)
+  {
     strip.setPixelColor(i, strip.Color(100, 0, 255));
     strip.setPixelColor(i - 1, strip.Color(150, 0, 180));
     strip.setPixelColor(i - 2, strip.Color(200, 0, 150));
@@ -61,13 +63,14 @@ void setup() {
     strip.setPixelColor(i - 4, strip.Color(255, 0, 70));
     strip.setPixelColor(i - 5, strip.Color(255, 0, 0));
     strip.show();
-    delay(25);
+    delay(15);
   }
 
-  for (uint16_t i = 0; i <= 255; ++i) {
+  for (uint16_t i = 0; i <= 255; ++i)
+  {
     strip.fill(strip.Color(255, 0, i), 0, LED_COUNT);
     strip.show();
-    delay(8);
+    delay(5);
   }
 
   Serial.begin(2000000); // Check max. value for your usb-port (C340: 2M)
@@ -79,30 +82,40 @@ void setup() {
 }
 
 // loop() function -- runs repeatedly as long as board is on ---------------
-void loop() {
+void loop()
+{
 
-  if (Serial.available() > 0) {
+  if (Serial.available() > 0)
+  {
     usb_usage = 1;
     buffer[index++] = Serial.read();
-    if (index >= buffer_size) {
+    if (index >= buffer_size)
+    {
       index = 0;
-      if (buffer[0] == 'm' && buffer[1] == 'o') {
+      if (buffer[0] == 'm' && buffer[1] == 'o')
+      {
         strip.fill(strip.Color(0, 0, 0), 0, LED_COUNT);
-        strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, 115);
-        strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 117, LED_COUNT - 116);
 
+        // Left side:
+        strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, 37);
+        // Right side:
+        strip.fill(strip.Color(buffer[5], buffer[6], buffer[7]), 37, 115);
+        strip.fill(strip.Color(buffer[5], buffer[6], buffer[7]), 117, LED_COUNT - 116);
+        //Turn two leds off, 'cause they'd shine right into my eyes:
+        strip.setPixelColor(115, strip.Color(0, 0, 0));
+        strip.setPixelColor(116, strip.Color(0, 0, 0));
         strip.show();
       }
     }
   }
 
-  if (usb_usage == 0) {
+  if (usb_usage == 0)
+  {
     rainbow(40);
   }
 }
 
 // Rainbow cycle along whole strip. Pass delay time (in ms) between frames.
-// This is a minimal modified sample code of Adafruit's rainbow() function. 
 void rainbow(int wait)
 {
   // Hue of first pixel runs 5 complete loops through the color wheel.
@@ -111,11 +124,14 @@ void rainbow(int wait)
   // means we'll make 5*65536/256 = 1280 passes through this outer loop:
   for (long firstPixelHue = 0; firstPixelHue < 5 * 65536; firstPixelHue += 100)
   { // 256
-    for (int i = 0; i < strip.numPixels(); i++) { // For each pixel in strip...
-      if (Serial.available() > 0) {
+    for (int i = 0; i < strip.numPixels(); i++)
+    { // For each pixel in strip...
+      if (Serial.available() > 0)
+      {
         return;
       }
-      if (i == 115 || i == 116) {
+      if (i == 115 || i == 116)
+      {
         strip.setPixelColor(i, strip.Color(0, 0, 0));
         continue;
       }
