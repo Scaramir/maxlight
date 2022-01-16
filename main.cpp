@@ -49,13 +49,13 @@ UINT gNumFeatureLevels = ARRAYSIZE(gFeatureLevels);
 // Declaration of global variables:
 namespace screen_capture {
 	// main:
-	static int sleepTimerMs = (int)(((float)1 / 33) * 1000);
-	static int fps = 35;
+	static int32_t sleepTimerMs = (int)(((float)1 / 33) * 1000);
+	static int32_t fps = 30;
 	void set_sleepTimerMs(int& fps) { if (fps == 0) sleepTimerMs = 0; else sleepTimerMs = ((int)(((float)1 / fps) * 1000) - 1); }
 	HRESULT hr = E_FAIL;
 	// output_enumeration() + check_monitor_devices()
-	std::vector<IDXGIAdapter1*> adapters;							// Needs to be Released()
-	static int chosen_adapter_num = 0;								// default adpater 
+	std::vector<IDXGIAdapter1*> adapters;								    // Needs to be Released()
+	static uint8_t chosen_adapter_num = 0;									// default adpater 
 	IDXGIAdapter1* chosen_adapter = nullptr;
 	std::vector<IDXGIOutput*> outputs;
 	static int chosen_output_num = 0;
@@ -66,25 +66,25 @@ namespace screen_capture {
 	CComPtrCustom<ID3D11DeviceContext> context = nullptr;
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
 	// reject_sub_pixel()
-	static UINT8 min_saturation_per_pixel = 18;							// optional accents: 60;
-	static UINT8 min_brightness_per_pixel = 40;							//                  160;
+	static uint8_t min_saturation_per_pixel = 0;							// optional accents: 60;
+	static uint8_t min_brightness_per_pixel = 40;							//                  160;
 	// get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	D3D11_MAPPED_SUBRESOURCE mapped_subresource;
 	// benchmark
-	static int mapped_frames_counter = 0;
+	static uint32_t mapped_frames_counter = 0;
 	// arduino connection 
-	const char* serial_port = "COM7"; //{ 'C', 'O', 'M', '7' };			    // usb port name 
+	const char* serial_port = "COM7";										// usb port name 
 	Serial* SP;
 	// led_stuff:
 	struct Pixel {
 	public:
-		uint8_t b = 0;	                   								// initialized to 'black'; 
+		uint8_t b = 0;	                   									// initialized to 'black'; 
 		uint8_t g = 0;
 		uint8_t r = 0;
 	};
 	// fade:
-	int fade_val = 90;												// default value
+	int fade_val = 190;														// default value
 	Pixel mean_color_old_l;
 	Pixel mean_color_old_r;
 	Pixel mean_color_new_l;
@@ -128,7 +128,6 @@ void terminal_fill(std::string_view s, int8_t c = 10) {
 		std::cout << c;
 		Sleep(10);
 	}
-
 	return;
 }
 
@@ -225,7 +224,7 @@ int check_monitor_devices() {
 /**
  * @brief creates a cpu-accessible texture (D3D11Texture2D); this way, the texture can get copied and mapped.
  * @param frame_texture where the frame gets saved (memory-wise)
- * @return false, if texture is not accessible
+ * @return false, if texture is not accessible or could not be created
  */
 bool check_cpu_access_texture(CComPtrCustom<ID3D11Texture2D>& frame_texture) {
 	//create a texture with cpu_access_read
@@ -380,13 +379,13 @@ bool get_frame() {
 	hr = desktop_duplication->ReleaseFrame();
 
 	// let some frames get accumulated 
-	if ((sleepTimerMs - 12) > 1)
-		Sleep(sleepTimerMs - 12);
+	if ((sleepTimerMs - 15) > 0)
+		Sleep(sleepTimerMs - 15);
 	// this value is specific for my system 
 	// just give it some extra ms
 
 	//get accumulated frames
-	hr = desktop_duplication->AcquireNextFrame(8, &frame_info, &frame); // win desktop duplication apis' core function
+	hr = desktop_duplication->AcquireNextFrame(10, &frame_info, &frame); // win desktop duplication apis' core function
 	if (hr == DXGI_ERROR_INVALID_CALL) {
 		return false;
 	} if (hr == E_INVALIDARG) {
@@ -433,11 +432,11 @@ bool get_frame() {
 bool reject_sub_pixel(const Pixel& curr_pixel) {
 	if ((min_brightness_per_pixel == 0) & (min_saturation_per_pixel == 0))
 		return false;
-	else if ((curr_pixel.b + curr_pixel.g + curr_pixel.r < min_brightness_per_pixel))
+	if (((double)curr_pixel.b + curr_pixel.g + curr_pixel.r) / 1.5 < min_brightness_per_pixel)
 		return true;
-	else if ((abs(curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) * (abs(curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel) * (abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel))
+	if ((abs((int16_t)curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) * (abs((int16_t)curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel) * (abs((int16_t)curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel))
 		return true;
-	else
+
 		return false;
 }	
 
@@ -461,15 +460,15 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 	Pixel mean_pixel = {0, 0, 0};
 	uint32_t curr_pixel_position;
 
-	uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 7;					//middle overlap 
-	uint32_t col_end = (side == 1) ? (texture_desc.Width / 2) + texture_desc.Width / 7 : texture_desc.Width;
+	uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 10;					//middle overlap 
+	uint32_t col_end = (side == 1) ? (texture_desc.Width / 2) + texture_desc.Width / 10 : texture_desc.Width;
 
 	uint32_t pixel_amount = 0;
 	for (uint32_t row = 0; row < texture_desc.Height; row += 2) {												// +2 instead of ++ drops half the resolution
 		uint32_t row_start = row * mapped_subresource.RowPitch;													//  usually it's RGBA(unsigned Char) but we only care for rgb, 'cause a is alwys 255, 
-		for (uint32_t curr_col = col_start; curr_col < col_end; curr_col += 3) {												// col + quality_loss 
+		for (uint32_t curr_col = col_start; curr_col < col_end; curr_col += 3) {								// col + quality_loss 
 			curr_pixel_position = row_start + (curr_col *4);
-			curr_b = pixel_array_source[curr_pixel_position];												// first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
+			curr_b = pixel_array_source[curr_pixel_position];													// first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
 			curr_g = pixel_array_source[curr_pixel_position + 1];
 			curr_r = pixel_array_source[curr_pixel_position + 2];
 
@@ -484,8 +483,8 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 		}
 	}
 
-	if (pixel_amount == 0) {																				// avert division by zero 
-		mean_pixel = (side == 1) ? mean_color_old_l : mean_color_old_r;										// ..mh nothing found, let's send old frame and fade once more..
+	if (pixel_amount == 0) {																					// avert division by zero 
+		mean_pixel = (side == 1) ? mean_color_old_l : mean_color_old_r;											// ..mh nothing found, let's send old frame and fade once more..
 		return mean_pixel;
 	}
 
@@ -554,7 +553,7 @@ bool connection_setup() {
 	terminal_fill("\nTrying to connect with the LED controller\r\t...\r");
 
 	std::string s = "COM0";
-	for (int i = 0; i < 1000; ++i) {				// now every other Port from 0 to 30
+	for (int i = 0; i < 1000; ++i) {
 		if (i < 10)
 			s[3] = (char)(i+48);
 		else
@@ -639,7 +638,7 @@ bool setup_and_benchmark() {
 		}
 		terminal_fill("I captured: ~" + std::to_string(get_frame_call / 10) + " fps.\n", 14);
 	}
-	set_sleepTimerMs(user_fps); 		// reset
+	set_sleepTimerMs(user_fps); 		// resettimer
 
 	return true;
 }
@@ -706,7 +705,7 @@ int main() {
 	while (true) {
 		mean_color_old_l = mean_color_new_l;						// used in 'fade()'
 		mean_color_old_r = mean_color_new_r;						// used in 'fade()'
-		if (!get_frame()) 										// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
+		if (!get_frame()) 											// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
 			continue;
 		// Left side first
 		mean_color_new_l = retrieve_pixel(mapped_subresource, 1);
