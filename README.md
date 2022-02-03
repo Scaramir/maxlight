@@ -57,7 +57,6 @@ The presets were optimized for "Cat Quest 2"(video games) and animes.
 The project got compiled by Visual Studios' "Release Mode"  with winSDK and only works on Windows 8.1 and higher (x64). \
 'lumos_maxima.cpp' is the Arduino code and got compiled to the arduino by the Arduino-IDE, using it's compiler (just press the "upload" button for CH340 after choosing the old boot loader) \
 ..nothing fancy.. 
-Just ask me for a license and i will add one. 
 
 More features will come soon.
  
