@@ -66,15 +66,15 @@ namespace screen_capture {
 	CComPtrCustom<ID3D11DeviceContext> context = nullptr;
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
 	// reject_sub_pixel()
-	static uint8_t min_saturation_per_pixel = 0;							// optional accents: 60;
-	static uint8_t min_brightness_per_pixel = 40;							//                  160;
+	static uint8_t min_saturation_per_pixel = 10;							// optional accents: 60;
+	static uint8_t min_brightness_per_pixel = 50;							//                  160;
 	// get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	D3D11_MAPPED_SUBRESOURCE mapped_subresource;
 	// benchmark
 	static uint32_t mapped_frames_counter = 0;
 	// arduino connection 
-	const char* serial_port = "COM7";										// usb port name 
+	//const char* serial_port = "COM7";										// usb port name 
 	Serial* SP;
 	// led_stuff:
 	struct Pixel {
@@ -92,22 +92,22 @@ namespace screen_capture {
 
 	const uint8_t gamma8_neo_pixel[256] = {
 			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-			0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   1,   1,
-			1,   1,   1,   1,   1,   1,   2,   2,   2,   2,   2,   2,   2,   2,   3,
-			3,   3,   3,   3,   3,   4,   4,   4,   4,   5,   5,   5,   5,   5,   6,
-			6,   6,   6,   7,   7,   7,   8,   8,   8,   9,   9,   9,   10,  10,  10,
+			0,   0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+			1,   1,   2,   2,   2,   2,   2,   2,   2,   2,   2,   3,   3,   3,   3,
+			3,   3,   3,   4,   4,   4,   4,   4,   5,   5,   5,   5,   5,   6,   6,
+			6,   6,   7,   7,   7,   8,   8,   8,   9,   9,   9,  10,   10,  10,  10,
 			11,  11,  11,  12,  12,  13,  13,  13,  14,  14,  15,  15,  16,  16,  17,
 			17,  18,  18,  19,  19,  20,  20,  21,  21,  22,  22,  23,  24,  24,  25,
 			25,  26,  27,  27,  28,  29,  29,  30,  31,  31,  32,  33,  34,  34,  35,
-			36,  37,  38,  38,  39,  40,  41,  42,  42,  43,  44,  45,  46,  47,  48,
-			49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,
-			64,  65,  66,  68,  69,  70,  71,  72,  73,  75,  76,  77,  78,  80,  81,
-			82,  84,  85,  86,  88,  89,  90,  92,  93,  94,  96,  97,  99,  100, 102,
-			103, 105, 106, 108, 109, 111, 112, 114, 115, 117, 119, 120, 122, 124, 125,
-			127, 129, 130, 132, 134, 136, 137, 139, 141, 143, 145, 146, 148, 150, 152,
-			154, 156, 158, 160, 162, 164, 166, 168, 170, 172, 174, 176, 178, 180, 182,
-			184, 186, 188, 191, 193, 195, 197, 199, 202, 204, 206, 209, 211, 213, 215,
-			218, 220, 223, 225, 227, 230, 232, 235, 237, 240, 242, 245, 247, 250, 252, 
+			36,  37,  38,  38,  39,  40,  41,  42,  43,  43,  44,  46,  47,  48,  49,
+			50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,
+			65,  66,  67,  69,  70,  71,  72,  73,  74,  75,  77,  78,  79,  81,  82,
+			83,  85,  86,  87,  89,  90,  92,  93,  94,  95,  96,  98, 100,  101, 103,
+			104, 106, 107, 109, 110, 112, 113, 115, 116, 118, 120, 121, 123, 124, 126,
+			128, 130, 131, 133, 135, 137, 138, 140, 142, 144, 146, 147, 149, 151, 153,
+			155, 157, 159, 161, 163, 165, 167, 169, 171, 173, 175, 177, 179, 182, 183,
+			185, 187, 189, 192, 194, 196, 198, 200, 203, 205, 207, 210, 212, 214, 216,
+			219, 221, 224, 226, 228, 231, 233, 236, 238, 241, 243, 246, 248, 251, 253, 
 			255};
 };
 using namespace screen_capture;
@@ -432,12 +432,14 @@ bool get_frame() {
 bool reject_sub_pixel(const Pixel& curr_pixel) {
 	if ((min_brightness_per_pixel == 0) & (min_saturation_per_pixel == 0))
 		return false;
-	if (((double)curr_pixel.b + curr_pixel.g + curr_pixel.r) / 1.5 < min_brightness_per_pixel)
-		return true;
-	if ((abs((int16_t)curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) * (abs((int16_t)curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel) * (abs((int16_t)curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel))
-		return true;
 
-		return false;
+	if ((curr_pixel.b < min_saturation_per_pixel) * (curr_pixel.g < min_saturation_per_pixel) * (curr_pixel.r < min_saturation_per_pixel))
+		return true;
+	if (min_saturation_per_pixel > 0) {
+		if ((abs((int16_t)curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) * (abs((int16_t)curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel) * (abs((int16_t)curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel))
+			return true;
+	}
+	return false;
 }	
 
 
@@ -716,7 +718,7 @@ int main() {
 		mean_color_new_r = fade(mean_color_new_r, mean_color_old_r);
 		Pixel mean_color_gamma_corrected_r = gamma_correction(mean_color_new_r);
 
-		if (!send_data(mean_color_gamma_corrected_l, mean_color_gamma_corrected_r)) {			// send data to micro controller
+		if (!send_data(mean_color_gamma_corrected_l, mean_color_gamma_corrected_r)) {
 			terminal_fill("Error: Sending data to the micro controller failed!\r\tTrying to reconnect...\r", 12);
 			Sleep(5000);
 			connection_setup();
