@@ -23,13 +23,15 @@ Go ahead and run the program:
 ```
 Inserting higher saturation and brightness values in the setup will show you the current color accents of the screen. 
 For watching a movie, I'd recommend lower values to get an ambient lighting and smoother transitions. 
-Higher saturation values than zero can be used to ignore the 256 shades of grey (from black to white) and 
-a higher brighness value ignores dark pixels and raises the overall brightness of the LEDs,
-which then adapt only the color of the accents on the display. 
-In combination with a low saturation value, a smooth and ambient effect can be created. 
+Higher saturation values than zero can be used to ignore the 256 shades of grey (from black to white) and will show you more saturated colors,
+a higher brighness value ignores dark pixels and raises the overall brightness of the LEDs.
+These combinated will lead to poppy colors and a more vibrant lighting.
 The fading factor is something like the "aggressiveness". Higher fading factors will lead to a smoother transition between your captured colors. 
 Just play around. 
-The presets were optimized for "Cat Quest 2"(video games) and animes. 
+The presets were optimized for colorful and brighter scenes, e.g. "Cat Quest 2"(video games), animes and working on the computer. 
+
+I'd recommend no saturation (0) at all and a minimal brightness value (15) with a very high fading factor (210) to get a more natural lighting effect.
+This works also well for documentaries and movies.
 ```
 
 ## TODOs:
@@ -38,17 +40,17 @@ The presets were optimized for "Cat Quest 2"(video games) and animes.
     - [x] Apply the gamma correction only while sending, not in retrieve_pixel(). 
 - [x] better USB-connection, e.g. detect disconnect and wait for re-connect
     - [x] Resolved one issue: Can connect with any COM-port number below 1000 
-- [ ] Reinitialize enumerator and devices after device failure
+- [ ] Reinitialize enumerator and devices after device failure (could also fix the second issue)
 - [ ] Implement modes 
     - [ ] static light
     - [ ] standard light effects (rainbow, smooth, ...)
         - [x] A fancy rainbow effect is the Arduino's default while the tool is not running. 
     - [ ] overall darken/brighten factor
-- [ ] Assign monitor areas to distinguished LEDs or LED-stripes (Ambilight(TM)-style)
+- [x] Assign monitor areas to distinguished LEDs (Ambilight(TM)-style) (left and right side of the screen with overlap)
     - [ ] monitor iterations can be split in different loops(/threads) 
     - [ ] re-write buffer-send
     - [ ] Arduino-script to distribute buffer-values to LEDs/stripes
-- [ ] Turn the console application into a nice UI after the bachelor's thesis.
+- [ ] Turn the console application into a nice GUI after the bachelor's thesis.
     - [ ] Gamma-correction value shift and matched gamma-values for "night mode"
 
 
@@ -58,7 +60,7 @@ The project got compiled by Visual Studios' "Release Mode"  with winSDK and only
 'lumos_maxima.cpp' is the Arduino code and got compiled to the arduino by the Arduino-IDE, using it's compiler (just press the "upload" button for CH340 after choosing the old boot loader) \
 ..nothing fancy.. 
 
-More features will come soon.
+The TODOs will be implemented soon, when my current project is finished.
  
 
 

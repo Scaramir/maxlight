@@ -67,7 +67,7 @@ namespace screen_capture {
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
 	// reject_sub_pixel()
 	static uint8_t min_saturation_per_pixel = 10;							// optional accents: 60;
-	static uint8_t min_brightness_per_pixel = 50;							//                  160;
+	static uint8_t min_brightness_per_pixel = 30;							//                  160;
 	// get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	D3D11_MAPPED_SUBRESOURCE mapped_subresource;
@@ -84,7 +84,7 @@ namespace screen_capture {
 		uint8_t r = 0;
 	};
 	// fade:
-	int fade_val = 190;														// default value
+	int fade_val = 150;														// default value
 	Pixel mean_color_old_l;
 	Pixel mean_color_old_r;
 	Pixel mean_color_new_l;
