@@ -433,8 +433,11 @@ bool reject_sub_pixel(const Pixel& curr_pixel) {
 	if ((min_brightness_per_pixel == 0) & (min_saturation_per_pixel == 0))
 		return false;
 
-	if ((curr_pixel.b < min_saturation_per_pixel) * (curr_pixel.g < min_saturation_per_pixel) * (curr_pixel.r < min_saturation_per_pixel))
-		return true;
+	if (min_brightness_per_pixel > 0) {
+		if ((curr_pixel.b < min_brightness_per_pixel) * (curr_pixel.g < min_brightness_per_pixel) * (curr_pixel.r < min_brightness_per_pixel))
+			return true;
+	}
+
 	if (min_saturation_per_pixel > 0) {
 		if ((abs((int16_t)curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) * (abs((int16_t)curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel) * (abs((int16_t)curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel))
 			return true;
