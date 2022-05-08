@@ -66,8 +66,8 @@ namespace screen_capture {
 	CComPtrCustom<ID3D11DeviceContext> context = nullptr;
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
 	// reject_sub_pixel()
-	static uint8_t min_saturation_per_pixel = 10;							// optional accents: 60;
-	static uint8_t min_brightness_per_pixel = 30;							//                  160;
+	static uint8_t min_saturation_per_pixel = 0;							
+	static uint8_t min_brightness_per_pixel = 14;
 	// get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	D3D11_MAPPED_SUBRESOURCE mapped_subresource;
@@ -84,7 +84,7 @@ namespace screen_capture {
 		uint8_t r = 0;
 	};
 	// fade:
-	int fade_val = 150;														// default value
+	int fade_val = 175;														// default value
 	Pixel mean_color_old_l;
 	Pixel mean_color_old_r;
 	Pixel mean_color_new_l;
@@ -343,7 +343,7 @@ int create_and_get_device(int& chosen_monitor) {
 
 	//Can the cpu read the texture?
 	if (!check_cpu_access_texture(frame_texture)) {		
-		terminal_fill("The used texture is not accessabil by the cpu. ", 12);
+		terminal_fill("The used texture is not accessible by the cpu. ", 12);
 		return -100;
 	}
 	
@@ -455,7 +455,6 @@ bool reject_sub_pixel(const Pixel& curr_pixel) {
 Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& side) {
 	// point to bytes/values of pixel data 
 	uint8_t* pixel_array_source = static_cast<uint8_t*>(mapped_subresource.pData);
-
 	uint8_t curr_b = 0;
 	uint8_t curr_g = 0;
 	uint8_t curr_r = 0;
