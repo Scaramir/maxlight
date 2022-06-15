@@ -21,8 +21,8 @@
 #include <shlobj.h>
 #include <shellapi.h>
 
-#include "include/ccomptrcustom_class.hpp"
-#include "include/SerialClass.h"
+#include "./include/ccomptrcustom_class.hpp"
+#include "./include/SerialClass.h"
 
 #pragma comment(lib, "dxgi") // this is for CreateDXGIFactory1()
 #pragma comment(lib, "d3d11")
@@ -59,6 +59,7 @@ namespace screen_capture {
 	IDXGIAdapter1* chosen_adapter = nullptr;
 	std::vector<IDXGIOutput*> outputs;
 	static int chosen_output_num = 0;
+	static DXGI_OUTPUT_DESC desc;  
 	// check_cpu_access()
 	D3D11_TEXTURE2D_DESC texture_desc;
 	// create_and_get_device()
@@ -147,15 +148,24 @@ int output_enumeration(int16_t& i) {
 		printf("Found monitor %d on adapter: %lu \n", monitor_num, i);
 		outputs.push_back(output);			// store the found monitor
 
-		DXGI_OUTPUT_DESC desc;				// get description of the monitor
 		HRESULT hr = outputs[monitor_num]->GetDesc(&desc);
 		if (SUCCEEDED(hr)) {				// print info
 			wprintf(L"\t\tMonitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'Y' : 'n');
-			std::cout << "\t\twith the following dimensions:\n\t\t " <<
-				abs(abs((int)desc.DesktopCoordinates.right) - abs((int)desc.DesktopCoordinates.left)) <<
-				" x " <<
-				abs(abs((int)desc.DesktopCoordinates.top) - abs((int)desc.DesktopCoordinates.bottom)) <<
-				" pixel" << "\n";
+			if (desc.Rotation == DXGI_MODE_ROTATION_IDENTITY || desc.Rotation == DXGI_MODE_ROTATION_UNSPECIFIED || desc.Rotation == DXGI_MODE_ROTATION_ROTATE180) {
+				wprintf(L"\t\tMonitor is in a horizontal mode\n");
+				std::cout << "\t\tand has the following dimensions:\n\t\t " <<
+					abs(abs((int)desc.DesktopCoordinates.right) - abs((int)desc.DesktopCoordinates.left)) <<
+					" x " <<
+					abs(abs((int)desc.DesktopCoordinates.top) - abs((int)desc.DesktopCoordinates.bottom)) <<
+					" pixel" << "\n";
+			} else {
+				wprintf(L"\t\tMonitor is in a vertical mode\n");
+				std::cout << "\t\tand has the following dimensions:\n\t\t " <<
+					abs(abs((int)desc.DesktopCoordinates.right) - abs((int)desc.DesktopCoordinates.left)) <<
+					" x " <<
+					abs(abs((int)desc.DesktopCoordinates.bottom) + abs((int)desc.DesktopCoordinates.top)) <<
+					" pixel" << "\n";
+			}
 		} else {
 			terminal_fill("Error: failed to retrieve a DXGI_OUTPUT_DESC for output " + std::to_string(i) + ".\nContinue\n", 12);
 			continue;
@@ -304,6 +314,7 @@ int create_and_get_device(int& chosen_monitor) {
 	 * query a IDXGIOutput1, because the IDXGIOutput1 has the DuplicateOutput feature.
 	 */
 	chosen_output = outputs[chosen_output_num];
+	chosen_output->GetDesc(&desc);
 	if (chosen_output == nullptr) {
 		terminal_fill("Selected Monitor '" + std::to_string(chosen_output_num) + "' is invalid.\n", 12);
 		return -2;
@@ -328,8 +339,15 @@ int create_and_get_device(int& chosen_monitor) {
 	DXGI_OUTDUPL_DESC desktop_duplicate_desc;
 	desktop_duplication->GetDesc(&desktop_duplicate_desc);
 	ZeroMemory(&texture_desc, sizeof(texture_desc));
-	texture_desc.Width = desktop_duplicate_desc.ModeDesc.Width;
-	texture_desc.Height = desktop_duplicate_desc.ModeDesc.Height;
+	
+	if (desc.Rotation == DXGI_MODE_ROTATION_IDENTITY || desc.Rotation == DXGI_MODE_ROTATION_UNSPECIFIED || desc.Rotation == DXGI_MODE_ROTATION_ROTATE180) {
+		texture_desc.Width = desktop_duplicate_desc.ModeDesc.Width;
+		texture_desc.Height = desktop_duplicate_desc.ModeDesc.Height;
+	}
+	else {
+		texture_desc.Width = desktop_duplicate_desc.ModeDesc.Height;
+		texture_desc.Height = desktop_duplicate_desc.ModeDesc.Width;
+	}
 	texture_desc.MipLevels = 1;
 	texture_desc.ArraySize = 1;
 	texture_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;                                                  		 // This is the default data when using desktop duplication, see https://msdn.microsoft.com/en-us/library/windows/desktop/hh404611(v=vs.85).aspx
@@ -462,21 +480,21 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 	uint32_t accum_pixel_g = 0;
 	uint32_t accum_pixel_r = 0;
 	Pixel mean_pixel = {0, 0, 0};
-	uint32_t curr_pixel_position;
+	uint32_t curr_pixel_position = 0;
 
+	// TODO: flip columns with rows for horizontal support. 
+	uint32_t pixel_amount = 0;
 	uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 10;					//middle overlap 
 	uint32_t col_end = (side == 1) ? (texture_desc.Width / 2) + texture_desc.Width / 10 : texture_desc.Width;
-
-	uint32_t pixel_amount = 0;
 	for (uint32_t row = 0; row < texture_desc.Height; row += 2) {												// +2 instead of ++ drops half the resolution
-		uint32_t row_start = row * mapped_subresource.RowPitch;													//  usually it's RGBA(unsigned Char) but we only care for rgb, 'cause a is alwys 255, 
+		uint32_t row_start = row * mapped_subresource.RowPitch;													// usually it's RGBA(unsigned Char) but we only care for rgb, 'cause a is always 255, 
 		for (uint32_t curr_col = col_start; curr_col < col_end; curr_col += 3) {								// col + quality_loss 
-			curr_pixel_position = row_start + (curr_col *4);
+			curr_pixel_position = row_start + (curr_col * 4);
 			curr_b = pixel_array_source[curr_pixel_position];													// first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
 			curr_g = pixel_array_source[curr_pixel_position + 1];
 			curr_r = pixel_array_source[curr_pixel_position + 2];
 
-			if (reject_sub_pixel({curr_b, curr_g, curr_r}))
+			if (reject_sub_pixel({ curr_b, curr_g, curr_r }))
 				continue;
 
 			accum_pixel_b += curr_b;
@@ -554,7 +572,7 @@ std::vector<std::vector<uint8_t>> setup_gamma() {
  * @return bool connected
  */
 bool connection_setup() {
-	terminal_fill("\nTrying to connect with the LED controller\r\t...\r");
+	terminal_fill("\rTrying to connect with the LED controller\r\t...\r");
 
 	std::string s = "COM0";
 	for (int i = 0; i < 1000; ++i) {

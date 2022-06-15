@@ -65,7 +65,6 @@ The TODOs will be implemented soon, when my current project is finished.
 
 
 ## Known issues:
-- Rotated monitors won't get captured. I will re-read how to solve this issue. 
 - A lot of programs and games handle the DirectX full screen switch well enough to work with this program. But the following happens sometimes: \
 Switching from or to a fullscreen mode programm causes an access loss of the GPU-variables or it gets stuck in an windows-api-function. Restart the program and switch / 'Alt+Tab' back to the game within 5 seconds. This accounts to every display mode switch (change of resolution, lockscreen, changing games from window mode to fullscreen, ...).
 - Netflix' desktop app and some other apps and sites with strong DRM-protection will block the win desktop duplication api from grabbing the frames. 
