@@ -672,24 +672,24 @@ bool configuration() {
 	std::cin.clear();
 	std::cin >> configurate;
 	if (configurate == "y" || configurate == "Y") {
-		terminal_fill("\nWhich framerate would you like to capture?\n\tType your (positive) number, or '0' to catch 'em all:\t\tDefault: 35 \n", 11);
+		terminal_fill("\nWhich framerate would you like to capture?\n\tType your (positive) number, or '0' to catch 'em all:\t\tDefault: " + std::to_string(fps) + "\n", 11);
 		std::cin.clear();
 		std::cin >> fps;
 		set_sleepTimerMs(fps);
 		std::cin.clear();
 
 		int sat, bright = 0;
-		terminal_fill("Insert min. saturation level of the pixel for the analyzation (0 - 255)):\t\tDefault: 18\n", 11);
+		terminal_fill("Insert min. saturation level of the pixel for the analyzation (0 - 255)):\t\tDefault: " + std::to_string(min_saturation_per_pixel) + "\n", 11);
 		std::cin.clear();
 		std::cin >> sat;
 		min_saturation_per_pixel = sat;
 
-		terminal_fill("Insert min. brightness level of the pixel for the analyzation (0 - 255)):\t\tDefault: 50\n", 11);
+		terminal_fill("Insert min. brightness level of the pixel for the analyzation (0 - 255)):\t\tDefault: " + std::to_string(min_brightness_per_pixel) + "\n", 11);
 		std::cin.clear();
 		std::cin >> bright;
 		min_brightness_per_pixel = bright;
 
-		terminal_fill("Insert fading factor from one frame to another (0 - 255):\t\tDefault: 110\n", 11);
+		terminal_fill("Insert fading factor from one frame to another (0 - 255):\t\tDefault: " + std::to_string(fade_val) + "\n", 11);
 		std::cin.clear();
 		std::cin >> fade_val;
 	}
