@@ -67,8 +67,8 @@ namespace screen_capture {
 	CComPtrCustom<ID3D11DeviceContext> context = nullptr;
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
 	// reject_sub_pixel()
-	static uint8_t min_saturation_per_pixel = 0;							
-	static uint8_t min_brightness_per_pixel = 14;
+	static uint8_t min_saturation_per_pixel = 5;							
+	static uint8_t min_brightness_per_pixel = 16;
 	// get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	D3D11_MAPPED_SUBRESOURCE mapped_subresource;
@@ -553,11 +553,11 @@ Pixel gamma_correction(const Pixel& pixel){
 // true gamme correction:
 // TODO:
 #if 0
-std::vector<std::vector<uint8_t>> setup_gamma() {
+std::vector<std::vector<uint8_t>> setup_gamma(float gamma_value=2.8) {
 	std::vector<std::vector<uint8_t>> gamma(256, std::vector<uint8_t>(3, 0));
 	// Pre-compute gamma correction table for LED brightness levels:
 	for (int i = 0; i < 256; ++i) {
-		float f = pow((float)i / 255., 2.8);
+		float f = pow((float)i / 255., gamma_value);
 		gamma[i][0] = (uint8_t)(f * 255.);
 		gamma[i][1] = (uint8_t)(f * 240.);
 		gamma[i][2] = (uint8_t)(f * 220.);

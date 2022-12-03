@@ -56,38 +56,69 @@ void setup()
   strip.fill(strip.Color(255, 0, 0), 0, 6);
   for (uint16_t i = 5; i < LED_COUNT; ++i)
   {
-    strip.setPixelColor(i, strip.Color(100, 0, 255));
-    strip.setPixelColor(i - 1, strip.Color(150, 0, 180));
-    strip.setPixelColor(i - 2, strip.Color(200, 0, 150));
-    strip.setPixelColor(i - 3, strip.Color(255, 0, 100));
-    strip.setPixelColor(i - 4, strip.Color(255, 0, 70));
-    strip.setPixelColor(i - 5, strip.Color(255, 0, 0));
+    strip.setPixelColor(i, strip.Color(100, 1, 255));
+    strip.setPixelColor(i - 1, strip.Color(150, 3, 200));
+    strip.setPixelColor(i - 2, strip.Color(200, 7, 180));
+    strip.setPixelColor(i - 3, strip.Color(255, 9, 100));
+    strip.setPixelColor(i - 4, strip.Color(255, 11, 70));
+    strip.setPixelColor(i - 5, strip.Color(255, 13, 0));
     strip.show();
     delay(15);
   }
 
   for (uint16_t i = 0; i <= 255; ++i)
   {
-    strip.fill(strip.Color(255, 0, i), 0, LED_COUNT);
+    strip.fill(strip.Color(255, i / 1.5, 2), 0, LED_COUNT);
     strip.show();
     delay(5);
   }
 
-  Serial.begin(2000000); // Check max. value for your usb-port (C340: 2M)
+  Serial.begin(2000000); // Check max. value for your usb-port first (C340: 2M)
   Serial.print("ml");    // Send string to host
-
   strip.fill((strip.Color(0, 0, 0), 0, LED_COUNT));
   strip.clear();
   strip.show();
+
+  while (index <= buffer_size)
+  {
+    if (Serial.available() > 0)
+    {
+      buffer[index++] = Serial.read();
+      if (index == buffer_size)
+      {
+        index = 0;
+        if (buffer[0] == 'm' && buffer[1] == 'o')
+        {
+          usb_usage = 1;
+          break;
+        }
+        if (buffer[0] == 'r' && buffer[1] == 'b')
+        {
+          usb_usage = 2;
+          break;
+        }
+      }
+    }
+  }
 }
 
 // loop() function -- runs repeatedly as long as board is on ---------------
 void loop()
 {
+  if (usb_usage == 1)
+  {
+    maxlight(buffer);
+  }
+  if (usb_usage == 2)
+  {
+    rainbow(40);
+  }
+}
 
+void maxlight(uint8_t buffer[8])
+{
   if (Serial.available() > 0)
   {
-    usb_usage = 1;
     buffer[index++] = Serial.read();
     if (index >= buffer_size)
     {
@@ -95,23 +126,17 @@ void loop()
       if (buffer[0] == 'm' && buffer[1] == 'o')
       {
         strip.fill(strip.Color(0, 0, 0), 0, LED_COUNT);
-
         // Left side:
         strip.fill(strip.Color(buffer[2], buffer[3], buffer[4]), 0, 37);
         // Right side:
         strip.fill(strip.Color(buffer[5], buffer[6], buffer[7]), 37, 115);
         strip.fill(strip.Color(buffer[5], buffer[6], buffer[7]), 117, LED_COUNT - 116);
-        //Turn two leds off, 'cause they'd shine right into my eyes:
+        // Turn two leds off, 'cause they'd shine right into my eyes:
         strip.setPixelColor(115, strip.Color(0, 0, 0));
         strip.setPixelColor(116, strip.Color(0, 0, 0));
         strip.show();
       }
     }
-  }
-
-  if (usb_usage == 0)
-  {
-    rainbow(40);
   }
 }
 
