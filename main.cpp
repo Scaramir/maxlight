@@ -67,8 +67,8 @@ namespace screen_capture {
 	CComPtrCustom<ID3D11DeviceContext> context = nullptr;
 	CComPtrCustom<IDXGIOutputDuplication> desktop_duplication = nullptr;
 	// reject_sub_pixel()
-	static uint8_t min_saturation_per_pixel = 5;							
-	static uint8_t min_brightness_per_pixel = 16;
+	static uint8_t min_saturation_per_pixel = 7;							
+	static uint8_t min_brightness_per_pixel = 20;
 	// get_frame()
 	CComPtrCustom<ID3D11Texture2D> frame_texture = nullptr;
 	D3D11_MAPPED_SUBRESOURCE mapped_subresource;
@@ -85,18 +85,18 @@ namespace screen_capture {
 		uint8_t r = 0;
 	};
 	// fade:
-	int fade_val = 175;														// default value
+	int fade_val = 185;														// default value
 	Pixel mean_color_old_l;
 	Pixel mean_color_old_r;
 	Pixel mean_color_new_l;
 	Pixel mean_color_new_r;
 
 	const uint8_t gamma8_neo_pixel[256] = {
-			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-			0,   0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
-			1,   1,   2,   2,   2,   2,   2,   2,   2,   2,   2,   3,   3,   3,   3,
-			3,   3,   3,   4,   4,   4,   4,   4,   5,   5,   5,   5,   5,   6,   6,
-			6,   6,   7,   7,   7,   8,   8,   8,   9,   9,   9,  10,   10,  10,  10,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,
+			1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   2,   2,   2,   2,
+			2,   2,   2,   2,   2,   2,   2,   3,   3,   3,   3,   3,   3,   3,   3,
+			4,   4,   4,   4,   4,   4,   5,   5,   5,   5,   5,   6,   6,   6,   6,
+			6,   7,   7,   7,   7,   8,   8,   8,   9,   9,   9,  10,   10,  10,  10,
 			11,  11,  11,  12,  12,  13,  13,  13,  14,  14,  15,  15,  16,  16,  17,
 			17,  18,  18,  19,  19,  20,  20,  21,  21,  22,  22,  23,  24,  24,  25,
 			25,  26,  27,  27,  28,  29,  29,  30,  31,  31,  32,  33,  34,  34,  35,
@@ -127,7 +127,7 @@ void terminal_fill(std::string_view s, int8_t c = 10) {
 	SetConsoleTextAttribute(hConsole, c);
 	for (char c : s) {
 		std::cout << c;
-		Sleep(10);
+		Sleep(8);
 	}
 	return;
 }
@@ -484,8 +484,8 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 
 	// TODO: flip columns with rows for horizontal support. 
 	uint32_t pixel_amount = 0;
-	uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 10;					//middle overlap 
-	uint32_t col_end = (side == 1) ? (texture_desc.Width / 2) + texture_desc.Width / 10 : texture_desc.Width;
+	uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 8;					//middle overlap 8
+	uint32_t col_end = (side == 1) ? (texture_desc.Width / 2) + texture_desc.Width / 8 : texture_desc.Width;
 	for (uint32_t row = 0; row < texture_desc.Height; row += 2) {												// +2 instead of ++ drops half the resolution
 		uint32_t row_start = row * mapped_subresource.RowPitch;													// usually it's RGBA(unsigned Char) but we only care for rgb, 'cause a is always 255, 
 		for (uint32_t curr_col = col_start; curr_col < col_end; curr_col += 3) {								// col + quality_loss 
@@ -572,7 +572,7 @@ std::vector<std::vector<uint8_t>> setup_gamma(float gamma_value=2.8) {
  * @return bool connected
  */
 bool connection_setup() {
-	terminal_fill("\rTrying to connect with the LED controller\r\t...\r");
+	terminal_fill("\rTrying to connect with the LED controller\r   ...                                    \r");
 
 	std::string s = "COM0";
 	for (int i = 0; i < 1000; ++i) {
@@ -596,8 +596,8 @@ bool connection_setup() {
  * @param pixel, the new color values to be sent.
  * @return true, if send_data() worked or frame was 'black'.
  */
-bool send_data(const Pixel& pixel_l, const Pixel& pixel_r) {
-	uint8_t buffer[8] = { 'm', 'o', pixel_l.r, pixel_l.g, pixel_l.b, pixel_r.r, pixel_r.g, pixel_r.b };
+bool send_data(const Pixel& pixel_l, const Pixel& pixel_r, const char header1 = 'm', const char header2 = 'o') {
+	uint8_t buffer[8] = { header1, header2, pixel_l.r, pixel_l.g, pixel_l.b, pixel_r.r, pixel_r.g, pixel_r.b };
 	return SP->WriteData(buffer, 8 /*sizeof(buffer)*/);
 }
 
@@ -622,7 +622,7 @@ bool setup_and_benchmark() {
 	Sleep(3000);
 	create_and_get_device(chosen_output_num);
 
-	terminal_fill("I will run a test for 50 seconds, now.\n", 14);
+	terminal_fill("I will run a test for 50 seconds, now!\n", 14);
 	int user_fps = fps;
 	std::vector<int> fps_vec = { user_fps, 25, 30, 60, 0 };
 	for (size_t i = 0; i < fps_vec.size(); ++i) {
@@ -651,7 +651,7 @@ bool setup_and_benchmark() {
 			Pixel mean_color_gamma_corrected_r = gamma_correction(mean_color_new_r);
 
 			if (!send_data(mean_color_gamma_corrected_l, mean_color_gamma_corrected_r)) {									// send data to micro controller
-				terminal_fill("Sending data to the micro controller failed!\r\tTrying to reconnect...\r", 12);
+				terminal_fill("Sending data to the micro controller failed!\r\tTrying to reconnect...                          \r", 12);
 				Sleep(5000);
 				connection_setup();
 				Sleep(5000);
@@ -722,13 +722,20 @@ int main() {
 	if (!setup_and_benchmark())
 		return -2;
 
-	terminal_fill("\n--- Starting continues analyzation ---\n\n");
+	terminal_fill("\n--- Starting continuous analyzation ---\n");
 
+	terminal_fill("  --- Press any key to abort ---\n\n");
 	while (true) {
+		// abort if input to console is detected
+		if (_kbhit()) {
+			break;
+		}
+
 		mean_color_old_l = mean_color_new_l;						// used in 'fade()'
 		mean_color_old_r = mean_color_new_r;						// used in 'fade()'
 		if (!get_frame()) 											// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
 			continue;
+		
 		// Left side first
 		mean_color_new_l = retrieve_pixel(mapped_subresource, 1);
 		mean_color_new_l = fade(mean_color_new_l, mean_color_old_l);
@@ -739,18 +746,27 @@ int main() {
 		Pixel mean_color_gamma_corrected_r = gamma_correction(mean_color_new_r);
 
 		if (!send_data(mean_color_gamma_corrected_l, mean_color_gamma_corrected_r)) {
-			terminal_fill("Error: Sending data to the micro controller failed!\r\tTrying to reconnect...\r", 12);
+			terminal_fill("Error: Sending data to the micro controller failed!\r\tTrying to reconnect...                                 \r", 12);
 			Sleep(5000);
 			connection_setup();
 			Sleep(5000);
 		}
 		// prints:
 		if (mapped_frames_counter % (fps + 1) == 0)
-			std::cout << "new_avg_pixel_l: " << (int)mean_color_gamma_corrected_l.r << "r, " << (int)mean_color_gamma_corrected_l.g << "g, " << (int)mean_color_gamma_corrected_l.b << "b, " << (int)mean_color_gamma_corrected_r.r << "r_r, " << (int)mean_color_gamma_corrected_r.g << "g_r, " << (int)mean_color_gamma_corrected_r.b << "b_r      \r";
+			std::cout << "new_avg_pixel_l: " << (int)mean_color_gamma_corrected_l.r << "r, " << (int)mean_color_gamma_corrected_l.g << "g, " << (int)mean_color_gamma_corrected_l.b << "b, " << (int)mean_color_gamma_corrected_r.r << "r_r, " << (int)mean_color_gamma_corrected_r.g << "g_r, " << (int)mean_color_gamma_corrected_r.b << "b_r        \r";
+	}
+
+	// raindbow mode:
+	if (!send_data(Pixel{ (uint8_t)0, (uint8_t)0, (uint8_t)0 }, Pixel{ (uint8_t)0, (uint8_t)0, (uint8_t)0 }, 'r', 'b')) {
+		terminal_fill("Error: Sending data to the micro controller failed!\r\tTrying to reconnect...                                 \r", 12);
+		Sleep(5000);
+		connection_setup();
+		Sleep(5000);
 	}
 
 	std::cin.clear();
-	std::cout << "Press 'Enter' to end! \n";
+	std::cout << "\nPress 'Enter' to end!\n";
+	std::cin.ignore();
 	std::cin.ignore();
 
 	// oupsie:
