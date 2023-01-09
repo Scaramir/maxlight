@@ -10,7 +10,7 @@
  */
 #include <iostream>
 #include <sstream> 
-#include <dxgi1_2.h>        // include-order
+#include <dxgi1_2.h>  // include-order is important
 #include <d3d11.h>
 #include <memory>
 #include <algorithm>
@@ -51,7 +51,7 @@ namespace screen_capture {
 	// main:
 	static int32_t sleepTimerMs = (int)(((float)1 / 33) * 1000);
 	static int32_t fps = 30;
-	void set_sleepTimerMs(int& fps) { if (fps == 0) sleepTimerMs = 0; else sleepTimerMs = ((int)(((float)1 / fps) * 1000) - 1); }
+	void set_sleepTimerMs(int& fps) { if (fps == 0) sleepTimerMs = 0; else sleepTimerMs = ((int)((1. / fps) * 1000) - 1); }
 	HRESULT hr = E_FAIL;
 	// output_enumeration() + check_monitor_devices()
 	std::vector<IDXGIAdapter1*> adapters;								    // Needs to be Released()
@@ -120,14 +120,14 @@ using namespace screen_capture;
  * @param text to print
  * @param color-value default=10 (green), red would be '12'.
  */
-void terminal_fill(std::string_view s, int8_t c = 10) {
-	if (s.empty())
+void terminal_fill(std::string_view text, int8_t color = 10, int delay = 8) {
+	if (text.empty())
 		return;
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(hConsole, c);
-	for (char c : s) {
+	SetConsoleTextAttribute(hConsole, color);
+	for (char c : text) {
 		std::cout << c;
-		Sleep(8);
+		Sleep(delay);
 	}
 	return;
 }
@@ -151,7 +151,9 @@ int output_enumeration(int16_t& i) {
 		HRESULT hr = outputs[monitor_num]->GetDesc(&desc);
 		if (SUCCEEDED(hr)) {				// print info
 			wprintf(L"\t\tMonitor: %s, attached to desktop: %c\n", desc.DeviceName, (desc.AttachedToDesktop) ? 'Y' : 'n');
-			if (desc.Rotation == DXGI_MODE_ROTATION_IDENTITY || desc.Rotation == DXGI_MODE_ROTATION_UNSPECIFIED || desc.Rotation == DXGI_MODE_ROTATION_ROTATE180) {
+			if (desc.Rotation == DXGI_MODE_ROTATION_IDENTITY 
+				|| desc.Rotation == DXGI_MODE_ROTATION_UNSPECIFIED 
+				|| desc.Rotation == DXGI_MODE_ROTATION_ROTATE180) {
 				wprintf(L"\t\tMonitor is in a horizontal mode\n");
 				std::cout << "\t\tand has the following dimensions:\n\t\t " <<
 					abs(abs((int)desc.DesktopCoordinates.right) - abs((int)desc.DesktopCoordinates.left)) <<
@@ -287,7 +289,7 @@ int create_and_get_device(int& chosen_monitor) {
 		}
 	}
 
-	if (hr == E_INVALIDARG) {                // in Case D3D11_1 does not work (Error: invalid_arguments passed), take D3D11 and standard notation/parameters
+	if (hr == E_INVALIDARG) {                
 		hr = D3D11CreateDevice(
 			nullptr,                         // outputAdapter
 			D3D_DRIVER_TYPE_HARDWARE,
@@ -350,10 +352,10 @@ int create_and_get_device(int& chosen_monitor) {
 	}
 	texture_desc.MipLevels = 1;
 	texture_desc.ArraySize = 1;
-	texture_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;                                                  		 // This is the default data when using desktop duplication, see https://msdn.microsoft.com/en-us/library/windows/desktop/hh404611(v=vs.85).aspx
+	texture_desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // This is the default data when using desktop duplication
 	texture_desc.SampleDesc.Count = 1;
 	texture_desc.SampleDesc.Quality = 0;
-	texture_desc.Usage = D3D11_USAGE_STAGING /*D3D11_USAGE_DYNAMIC*/;					 					 // comments: this would lead to a GPU accessible texture only. --> TODO
+	texture_desc.Usage = D3D11_USAGE_STAGING /*D3D11_USAGE_DYNAMIC*/; // comments: this would lead to a GPU accessible texture only. --> TODO
 	texture_desc.BindFlags = 0 /*D3D11_BIND_SHADER_RESOURCE*/;
 	texture_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE; 
 	texture_desc.MiscFlags = 0;
@@ -448,16 +450,20 @@ bool get_frame() {
  * @return true, if pixel is too dark or too white and needs to be ignored.
 */
 bool reject_sub_pixel(const Pixel& curr_pixel) {
-	if ((min_brightness_per_pixel == 0) & (min_saturation_per_pixel == 0))
+	if (min_brightness_per_pixel == 0 && min_saturation_per_pixel == 0)
 		return false;
 
 	if (min_brightness_per_pixel > 0) {
-		if ((curr_pixel.b < min_brightness_per_pixel) * (curr_pixel.g < min_brightness_per_pixel) * (curr_pixel.r < min_brightness_per_pixel))
+		if ((curr_pixel.b < min_brightness_per_pixel) && 
+			(curr_pixel.g < min_brightness_per_pixel) && 
+			(curr_pixel.r < min_brightness_per_pixel))
 			return true;
 	}
 
 	if (min_saturation_per_pixel > 0) {
-		if ((abs((int16_t)curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) * (abs((int16_t)curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel) * (abs((int16_t)curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel))
+		if ((abs(curr_pixel.r - curr_pixel.g) < min_saturation_per_pixel) && 
+			(abs(curr_pixel.g - curr_pixel.b) < min_saturation_per_pixel) && 
+			(abs(curr_pixel.r - curr_pixel.b) < min_saturation_per_pixel))
 			return true;
 	}
 	return false;
@@ -484,13 +490,13 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 
 	// TODO: flip columns with rows for horizontal support. 
 	uint32_t pixel_amount = 0;
-	uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 8;					//middle overlap 8
+	uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 8; //middle overlap 8
 	uint32_t col_end = (side == 1) ? (texture_desc.Width / 2) + texture_desc.Width / 8 : texture_desc.Width;
-	for (uint32_t row = 0; row < texture_desc.Height; row += 2) {												// +2 instead of ++ drops half the resolution
-		uint32_t row_start = row * mapped_subresource.RowPitch;													// usually it's RGBA(unsigned Char) but we only care for rgb, 'cause a is always 255, 
-		for (uint32_t curr_col = col_start; curr_col < col_end; curr_col += 3) {								// col + quality_loss 
+	for (uint32_t row = 0; row < texture_desc.Height; row += 2) {                // +2 instead of ++ drops half the resolution
+		uint32_t row_start = row * mapped_subresource.RowPitch;	                 // usually it's RGBA(unsigned Char) but we only care for rgb, 'cause a is always 255, 
+		for (uint32_t curr_col = col_start; curr_col < col_end; curr_col += 3) { // col + quality_loss 
 			curr_pixel_position = row_start + (curr_col * 4);
-			curr_b = pixel_array_source[curr_pixel_position];													// first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
+			curr_b = pixel_array_source[curr_pixel_position];					 // first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
 			curr_g = pixel_array_source[curr_pixel_position + 1];
 			curr_r = pixel_array_source[curr_pixel_position + 2];
 
@@ -505,15 +511,16 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 		}
 	}
 
-	if (pixel_amount == 0) {																					// avert division by zero 
-		mean_pixel = (side == 1) ? mean_color_old_l : mean_color_old_r;											// ..mh nothing found, let's send old frame and fade once more..
+	if (pixel_amount == 0) {													 // avert division by zero 
+		mean_pixel = (side == 1) ? mean_color_old_l : mean_color_old_r;			 // ..mh nothing found, let's send old frame and fade once more..
 		return mean_pixel;
 	}
 
-	mean_pixel = {    //gamma adjustment
-		accum_pixel_b == (uint8_t)0 ? (uint8_t)0 : (uint8_t)(accum_pixel_b / pixel_amount),
-		accum_pixel_g == (uint8_t)0 ? (uint8_t)0 : (uint8_t)(accum_pixel_g / pixel_amount),
-		accum_pixel_r == (uint8_t)0 ? (uint8_t)0 : (uint8_t)(accum_pixel_r / pixel_amount),
+	mean_pixel = {    	// calculate mean of all pixels
+	// keep the remainder: + (accum_pixel_* % pixel_amount) 
+		static_cast<uint8_t>(accum_pixel_b / pixel_amount),
+		static_cast<uint8_t>(accum_pixel_g / pixel_amount),
+		static_cast<uint8_t>(accum_pixel_r / pixel_amount)
 	};
 
 	return mean_pixel;
@@ -524,14 +531,12 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
  * @param mean_pixel_new the new average color
  * @return mean_pixel_fade the faded color
  */
-Pixel fade(const Pixel& pixel, const Pixel& mean_color_old) {
+Pixel fade(const Pixel &pixel, const Pixel &mean_color_old){
 	uint8_t inv_fade_val = 256 - fade_val;
-	Pixel pixel_faded = {
-		(pixel.b * (inv_fade_val) + mean_color_old.b * fade_val) >> 8,
-		(pixel.g * (inv_fade_val) + mean_color_old.g * fade_val) >> 8,
-		(pixel.r * (inv_fade_val) + mean_color_old.r * fade_val) >> 8
-	};
-
+	Pixel pixel_faded;
+	pixel_faded.b = (pixel.b * inv_fade_val + mean_color_old.b * fade_val) >> 8;
+	pixel_faded.g = (pixel.g * inv_fade_val + mean_color_old.g * fade_val) >> 8;
+	pixel_faded.r = (pixel.r * inv_fade_val + mean_color_old.r * fade_val) >> 8;
 	return pixel_faded;
 }
 
@@ -540,12 +545,11 @@ Pixel fade(const Pixel& pixel, const Pixel& mean_color_old) {
  * @param pixel 
  * @return Pixel after gamma_correction 
  */
-Pixel gamma_correction(const Pixel& pixel){
-	Pixel pixel_gamma_corrected = {														// TODO: use a gamma correction tabel with distinguished values for each color channel
-		gamma8_neo_pixel[pixel.b == 0 ? 0 : (int)ceil(pixel.b - (pixel.b / 5.))],		// blue is a bit too intense with WS2812b ICs on 5050LEDs
-		gamma8_neo_pixel[pixel.g == 0 ? 0 : (int)ceil(pixel.g - (pixel.g / 17.))],		// and green is intense for the eyes 
-		gamma8_neo_pixel[pixel.r]														// red stays the same
-	};
+Pixel gamma_correction(const Pixel &pixel){
+	Pixel pixel_gamma_corrected = {
+		gamma8_neo_pixel[pixel.b == 0 ? 0 : (uint8_t)ceil(pixel.b - (pixel.b / 5.))],
+		gamma8_neo_pixel[pixel.g == 0 ? 0 : (uint8_t)ceil(pixel.g - (pixel.b / 17.))],
+		gamma8_neo_pixel[pixel.r]};
 
 	return pixel_gamma_corrected;
 }
@@ -658,7 +662,7 @@ bool setup_and_benchmark() {
 			}
 			++get_frame_call;
 		}
-		terminal_fill("I captured: ~" + std::to_string(get_frame_call / 10) + " fps.\n", 14);
+		terminal_fill("I captured: ~" + std::to_string(get_frame_call / 10) + " fps.\n", 14, 6);
 	}
 	set_sleepTimerMs(user_fps); 		// resettimer
 
@@ -672,24 +676,24 @@ bool configuration() {
 	std::cin.clear();
 	std::cin >> configurate;
 	if (configurate == "y" || configurate == "Y") {
-		terminal_fill("\nWhich framerate would you like to capture?\n\tType your (positive) number, or '0' to catch 'em all:\t\tDefault: " + std::to_string(fps) + "\n", 11);
+		terminal_fill("\nWhich framerate would you like to capture?\n\tType your (positive) number, or '0' to catch 'em all:\t\tDefault: " + std::to_string(fps) + "\n", 11, 6);
 		std::cin.clear();
 		std::cin >> fps;
 		set_sleepTimerMs(fps);
 		std::cin.clear();
 
 		int sat, bright = 0;
-		terminal_fill("Insert min. saturation level of the pixel for the analyzation (0 - 255)):\t\tDefault: " + std::to_string(min_saturation_per_pixel) + "\n", 11);
+		terminal_fill("Insert min. saturation level of the pixel for the analyzation (0 - 255)):\t\tDefault: " + std::to_string(min_saturation_per_pixel) + "\n", 11, 6);
 		std::cin.clear();
 		std::cin >> sat;
 		min_saturation_per_pixel = sat;
 
-		terminal_fill("Insert min. brightness level of the pixel for the analyzation (0 - 255)):\t\tDefault: " + std::to_string(min_brightness_per_pixel) + "\n", 11);
+		terminal_fill("Insert min. brightness level of the pixel for the analyzation (0 - 255)):\t\tDefault: " + std::to_string(min_brightness_per_pixel) + "\n", 11, 6);
 		std::cin.clear();
 		std::cin >> bright;
 		min_brightness_per_pixel = bright;
 
-		terminal_fill("Insert fading factor from one frame to another (0 - 255):\t\tDefault: " + std::to_string(fade_val) + "\n", 11);
+		terminal_fill("Insert fading factor from one frame to another (0 - 255):\t\tDefault: " + std::to_string(fade_val) + "\n", 11, 6);
 		std::cin.clear();
 		std::cin >> fade_val;
 	}
@@ -724,16 +728,16 @@ int main() {
 
 	terminal_fill("\n--- Starting continuous analyzation ---\n");
 
-	terminal_fill("  --- Press any key to abort ---\n\n");
+	terminal_fill("    --- Press any key to abort ---\n\n");
 	while (true) {
 		// abort if input to console is detected
 		if (_kbhit()) {
 			break;
 		}
 
-		mean_color_old_l = mean_color_new_l;						// used in 'fade()'
-		mean_color_old_r = mean_color_new_r;						// used in 'fade()'
-		if (!get_frame()) 											// try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
+		mean_color_old_l = mean_color_new_l;  // used in 'fade()'
+		mean_color_old_r = mean_color_new_r;  // used in 'fade()'
+		if (!get_frame()) 					  // try no if-condition here for smoother lights when less than 24fps, but adjust send_data with a 1m sleep..
 			continue;
 		
 		// Left side first
@@ -753,7 +757,12 @@ int main() {
 		}
 		// prints:
 		if (mapped_frames_counter % (fps + 1) == 0)
-			std::cout << "new_avg_pixel_l: " << (int)mean_color_gamma_corrected_l.r << "r, " << (int)mean_color_gamma_corrected_l.g << "g, " << (int)mean_color_gamma_corrected_l.b << "b, " << (int)mean_color_gamma_corrected_r.r << "r_r, " << (int)mean_color_gamma_corrected_r.g << "g_r, " << (int)mean_color_gamma_corrected_r.b << "b_r        \r";
+			std::cout << "new_avg_pixel_l: " << (int)mean_color_gamma_corrected_l.r << "r, " 
+					<< (int)mean_color_gamma_corrected_l.g << "g, " 
+					<< (int)mean_color_gamma_corrected_l.b << "b, " 
+					<< (int)mean_color_gamma_corrected_r.r << "r_r, " 
+					<< (int)mean_color_gamma_corrected_r.g << "g_r, " 
+					<< (int)mean_color_gamma_corrected_r.b << "b_r        \r";
 	}
 
 	// raindbow mode:
