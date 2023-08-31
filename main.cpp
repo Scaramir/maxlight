@@ -124,6 +124,9 @@ void terminal_fill(std::string_view text, int8_t color = 10, int delay = 8) {
 	if (text.empty())
 		return;
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hConsole == INVALID_HANDLE_VALUE)
+		std::cout << text << std::endl;
+		return;
 	SetConsoleTextAttribute(hConsole, color);
 	for (char c : text) {
 		std::cout << c;
@@ -405,7 +408,7 @@ bool get_frame() {
 	// just give it some extra ms
 
 	//get accumulated frames
-	hr = desktop_duplication->AcquireNextFrame(10, &frame_info, &frame); // win desktop duplication apis' core function
+	hr = desktop_duplication->AcquireNextFrame(100, &frame_info, &frame); // win desktop duplication apis' core function
 	if (hr == DXGI_ERROR_INVALID_CALL) {
 		return false;
 	} if (hr == E_INVALIDARG) {
@@ -488,13 +491,20 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 	Pixel mean_pixel = {0, 0, 0};
 	uint32_t curr_pixel_position = 0;
 
-	// TODO: flip columns with rows for horizontal support. 
+	/** TODO: 
+	 *  change row&col start and row&col end acoridng to given coordinates
+	 * 	modify loop to an row < row_end
+	 *  this way, we aren't limited to just two sides and can run multiple instances or this function
+	 * 	  to analyze just the pixels within the given coordinates. 
+	 *    therefore, the support for a horizontal mode would be also important 
+	 */
+
 	uint32_t pixel_amount = 0;
-	uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 8; //middle overlap 8
-	uint32_t col_end = (side == 1) ? (texture_desc.Width / 2) + texture_desc.Width / 8 : texture_desc.Width;
-	for (uint32_t row = 0; row < texture_desc.Height; row += 2) {                // +2 instead of ++ drops half the resolution
+	uint32_t col_start = (side == 1) ? 0 : (texture_desc.Width/2) - texture_desc.Width / 10; //middle overlap 8
+	uint32_t col_end = (side == 1) ? (texture_desc.Width / 2) + texture_desc.Width / 10 : texture_desc.Width;
+	for (uint32_t row = 0; row < texture_desc.Height; row += 3) {                // +2 instead of ++ drops half the resolution
 		uint32_t row_start = row * mapped_subresource.RowPitch;	                 // usually it's RGBA(unsigned Char) but we only care for rgb, 'cause a is always 255, 
-		for (uint32_t curr_col = col_start; curr_col < col_end; curr_col += 3) { // col + quality_loss 
+		for (uint32_t curr_col = col_start; curr_col < col_end; curr_col += 4) { // col + quality_loss 
 			curr_pixel_position = row_start + (curr_col * 4);
 			curr_b = pixel_array_source[curr_pixel_position];					 // first byte = b, according to "DXGI_FORMAT_B8G8R8A8_UNORM"
 			curr_g = pixel_array_source[curr_pixel_position + 1];
@@ -506,7 +516,6 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 			accum_pixel_b += curr_b;
 			accum_pixel_g += curr_g;
 			accum_pixel_r += curr_r;
-
 			++pixel_amount;
 		}
 	}
@@ -517,7 +526,6 @@ Pixel retrieve_pixel(D3D11_MAPPED_SUBRESOURCE& mapped_subresource, const int& si
 	}
 
 	mean_pixel = {    	// calculate mean of all pixels
-	// keep the remainder: + (accum_pixel_* % pixel_amount) 
 		static_cast<uint8_t>(accum_pixel_b / pixel_amount),
 		static_cast<uint8_t>(accum_pixel_g / pixel_amount),
 		static_cast<uint8_t>(accum_pixel_r / pixel_amount)
@@ -555,7 +563,8 @@ Pixel gamma_correction(const Pixel &pixel){
 }
 
 // true gamme correction:
-// TODO:
+// TODO: create the lookup table, like this, cache it, an adjust it 
+// 		 add a modified version of gamma_correction()! 
 #if 0
 std::vector<std::vector<uint8_t>> setup_gamma(float gamma_value=2.8) {
 	std::vector<std::vector<uint8_t>> gamma(256, std::vector<uint8_t>(3, 0));
@@ -698,8 +707,8 @@ bool configuration() {
 		std::cin >> fade_val;
 	}
 	terminal_fill("\n--- Proceeding with following settings: ---\n");
-	std::cout << "\tMin.Brightness per Pixel: " << (int)min_brightness_per_pixel << "\n";
 	std::cout << "\tMin. Saturation per Pixel: " << (int)min_saturation_per_pixel << "\n";
+	std::cout << "\tMin. Brightness per Pixel: " << (int)min_brightness_per_pixel << "\n";
 	std::cout << "\tFading factor: " << fade_val << "\n";
 	std::cout << "\tMax. fps: " << fps << "\n";
 
