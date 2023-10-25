@@ -14,7 +14,7 @@ Keeping the CPU usage low was one of the goals, because gaming on my very own se
   my CPU is the performance bottleneck while the GPU stays cool and calm. 
 A super low latency was important as well.
 
-## Using the program aka finding your preferred config.-values: 
+## Using the program aka finding your preferred config-values: 
 Make sure to install an USB-driver for the arduino. In my case it's the CH340-driver for the super cheap Arduino-Nano-Clone.\
 Your computer recognizes the device? \
 Load "lumos_maxima.cpp" onto your Arduino. ("Old Bootloader for ATMega" works for the AN-Clone)
